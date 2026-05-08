@@ -1,0 +1,325 @@
+/* =========================================================================
+   Flagstaff Social — Design Tokens
+   Synced from Figma: "Flagstaff Social Design System - MUI"
+     file:  GxID0fpIpOueLtT8nKmzBh
+     pulled: 2025-09-03 file modification, regenerated for this build
+   Source of truth lives in Figma; this file mirrors it for code.
+   Components reference SEMANTIC tokens, never primitives.
+   ========================================================================= */
+
+:root {
+  /* ---------------------------------------------------------------------
+     COLOR — PRIMITIVES
+     Raw palette. Pulled from the Figma file; never used directly in UI.
+     --------------------------------------------------------------------- */
+
+  /* Indigo — Flagstaff brand / primary
+     The static Button-page sample I scraped earlier read #3C4194, but the
+     in-app screens use a brighter indigo for accents (sidebar active state,
+     primary buttons, links). #5B5BF5 matches what the live UI shows. The
+     deeper #3C4194 is preserved as primary.dark for emphasis use. */
+  --indigo-50:   #EEF0FF;
+  --indigo-100:  #E0E3FF;
+  --indigo-200:  #C5CAFF;
+  --indigo-300:  #A3A9FF;
+  --indigo-400:  #7C82FB;   /* primary.light */
+  --indigo-500:  #5B5BF5;   /* primary.main  ← matches in-app accent */
+  --indigo-600:  #4848E0;
+  --indigo-700:  #3C4194;   /* primary.dark  (formerly extracted as main) */
+  --indigo-800:  #2E2E8F;
+  --indigo-900:  #1F1F66;
+
+  /* Violet — secondary accent / AI gradient pair */
+  --violet-300:  #B98FFF;
+  --violet-400:  #9B6BFF;
+  --violet-500:  #8347FF;
+  --violet-600:  #6B2EE0;
+
+  /* Neutral — Surfaces, text, borders. MUI grey palette + the custom slates
+     observed in the Figma file (#9AA4B2 used as cool-grey divider). */
+  --neutral-0:   #FFFFFF;
+  --neutral-25:  #FAFAFA;
+  --neutral-50:  #F5F5F7;   /* App canvas */
+  --neutral-75:  #F0EFEC;   /* Sidebar surface */
+  --neutral-100: #ECECEF;
+  --neutral-150: #E4E4E8;
+  --neutral-200: #D9D9DE;
+  --neutral-300: #BDBDBD;   /* MUI grey.400 — observed */
+  --neutral-400: #9AA4B2;   /* cool slate — observed in Figma */
+  --neutral-500: #71717A;
+  --neutral-600: #52525B;
+  --neutral-700: #3F3F46;
+  --neutral-800: #27272A;
+  --neutral-900: #111114;
+
+  /* Status — values from MUI Alert components in the Figma file.
+     Each role has a main + dark + light-bg + dark-text ("contrast") shade. */
+  --error-main:        #D32F2F;   /* MUI default; not directly observed but standard for the kit */
+  --error-dark:        #C62828;   /* observed (alert error border) */
+  --error-bg-light:    #FDEDED;   /* observed (alert error background) */
+  --error-on-light:    #5F2120;   /* observed (alert error text) */
+
+  --warning-main:      #FFB400;   /* observed — custom (MUI default would be #ED6C02) */
+  --warning-dark:      #FB8C00;   /* observed */
+  --warning-bg-light:  #FFF4E5;   /* observed (alert warning background) */
+  --warning-on-light:  #663C00;   /* observed (alert warning text) */
+
+  --info-main:         #0288D1;   /* observed */
+  --info-dark:         #01579B;
+  --info-bg-light:     #E5F6FD;   /* observed */
+  --info-on-light:     #014361;   /* observed */
+
+  --success-main:      #2E7D32;   /* observed */
+  --success-dark:      #1E4620;   /* observed */
+  --success-bg-light:  #EDF7ED;   /* observed */
+  --success-on-light:  #1E4620;
+
+  /* Legacy names — kept so any existing reference doesn't break. */
+  --success-500: var(--success-main);
+  --success-50:  var(--success-bg-light);
+  --warning-500: var(--warning-main);
+  --warning-50:  var(--warning-bg-light);
+  --danger-500:  var(--error-main);
+  --danger-50:   var(--error-bg-light);
+
+  /* ---------------------------------------------------------------------
+     COLOR — SEMANTIC
+     Always reference these in components, never the primitives above.
+     --------------------------------------------------------------------- */
+
+  /* Surfaces */
+  --surface-canvas:    var(--neutral-50);   /* page background */
+  --surface-raised:    var(--neutral-0);    /* cards, panels */
+  --surface-sunken:    var(--neutral-75);   /* sidebar, suggestion bubbles */
+  --surface-overlay:   rgba(17, 17, 20, 0.55);
+
+  /* Text */
+  --text-primary:      var(--neutral-900);
+  --text-secondary:    var(--neutral-600);
+  --text-tertiary:     var(--neutral-500);
+  --text-disabled:     var(--neutral-400);
+  --text-on-primary:   var(--neutral-0);
+  --text-link:         var(--indigo-500);
+  --text-scout:        var(--indigo-500);   /* "Scout" label / brand mark */
+
+  /* Borders */
+  --border-subtle:     var(--neutral-150);
+  --border-default:    var(--neutral-200);
+  --border-strong:     var(--neutral-300);
+  --border-focus:      var(--indigo-500);
+
+  /* Brand & action — Figma's primary.main maps here. */
+  --primary:           var(--indigo-500);   /* #3C4194 */
+  --primary-hover:     var(--indigo-600);
+  --primary-pressed:   var(--indigo-700);
+  --primary-soft:      var(--indigo-50);
+  --primary-soft-hover:var(--indigo-100);
+  --primary-light:     var(--indigo-400);   /* #545BD1 — for hover backgrounds, skeletons */
+
+  /* Scout AI accent — gradient. Anchored on primary so it stays in family. */
+  --ai-gradient:       linear-gradient(135deg, var(--indigo-500) 0%, var(--violet-500) 100%);
+  --ai-gradient-soft:  linear-gradient(135deg, var(--indigo-50) 0%, #F1ECFF 100%);
+
+  /* Status semantic */
+  --status-success:    var(--success-main);
+  --status-warning:    var(--warning-main);
+  --status-danger:     var(--error-main);
+  --status-info:       var(--info-main);
+
+  /* ---------------------------------------------------------------------
+     TYPOGRAPHY — MUI scale
+     Family from Figma: "SF Pro Display". One scale matched to Figma's
+     named typography styles. Each named style is exposed both as a CSS
+     custom property bundle (-size / -line / -weight / -track) and as a
+     ready-to-use class lower in this file.
+     --------------------------------------------------------------------- */
+
+  /* On macOS, -apple-system / BlinkMacSystemFont resolve to the actual SF Pro
+     family (Display variant for sizes ≥ 20px, Text variant below). On other
+     OSes, Inter (loaded via Google Fonts in styles.css) is the closest visual
+     match to SF Pro Display. The literal "SF Pro Display" name is kept so
+     systems with the actual font installed will pick it up first. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               "Inter", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* MUI named type styles — values pulled from the Figma TEXT styles */
+  --type-h1-size:        84px;  --type-h1-line:        98px;     --type-h1-weight: 400;  --type-h1-track: -1.5px;
+  --type-h2-size:        56px;  --type-h2-line:      67.2px;     --type-h2-weight: 500;  --type-h2-track: -0.5px;
+  --type-h3-size:        44px;  --type-h3-line:      51.3px;     --type-h3-weight: 400;  --type-h3-track:  0;
+  --type-h4-size:        22px;  --type-h4-line:      27.2px;     --type-h4-weight: 500;  --type-h4-track:  0.25px;
+  --type-h5-size:        22px;  --type-h5-line:      29.3px;     --type-h5-weight: 500;  --type-h5-track:  0;
+  --type-h6-size:        18px;  --type-h6-line:      28.8px;     --type-h6-weight: 500;  --type-h6-track:  0.15px;
+  --type-subtitle1-size: 16px;  --type-subtitle1-line: 28px;     --type-subtitle1-weight: 400; --type-subtitle1-track: 0.15px;
+  --type-subtitle2-size: 13px;  --type-subtitle2-line: 20.4px;   --type-subtitle2-weight: 500; --type-subtitle2-track: 0.1px;
+  --type-body16-size:    16px;  --type-body16-line:    24px;     --type-body16-weight: 500;    --type-body16-track:    0.15px;
+  --type-body14-size:    14px;  --type-body14-line:    20px;     --type-body14-weight: 400;    --type-body14-track:    0.17px;
+  --type-body12-size:    12px;  --type-body12-line:  17.2px;     --type-body12-weight: 400;    --type-body12-track:    0.17px;
+  --type-caption-size:   11px;  --type-caption-line: 18.3px;     --type-caption-weight: 400;   --type-caption-track:   0.4px;
+  --type-overline-size:  11px;  --type-overline-line:29.3px;     --type-overline-weight: 400;  --type-overline-track:  1.0px;
+
+  /* Practical-scale primitives — used by components that just need a size.
+     Values match the MUI scale: 11/12/13/14/16/18/22/44/56/84. */
+  --text-xs:   12px;
+  --text-sm:   13px;
+  --text-md:   14px;   /* default body */
+  --text-base: 16px;
+  --text-lg:   18px;
+  --text-xl:   22px;
+  --text-2xl:  44px;
+  --text-3xl:  56px;
+  --text-4xl:  84px;
+
+  /* Line heights */
+  --leading-tight:  1.2;
+  --leading-snug:   1.35;
+  --leading-normal: 1.5;
+  --leading-relaxed:1.65;
+
+  /* Weights */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* Tracking */
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.02em;
+
+  /* ---------------------------------------------------------------------
+     SPACING (4-pt base, kept from prior — Figma uses MUI's 8-pt; our 4-pt
+     is a strict superset so all MUI spacing values are reachable here.)
+     --------------------------------------------------------------------- */
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ---------------------------------------------------------------------
+     RADIUS
+     --------------------------------------------------------------------- */
+  --radius-xs:    4px;       /* MUI shape.borderRadius */
+  --radius-sm:    6px;
+  --radius-md:    10px;      /* buttons, inputs */
+  --radius-lg:    14px;      /* small cards */
+  --radius-xl:    18px;      /* large cards, panels */
+  --radius-2xl:   24px;      /* hero panels */
+  --radius-full:  9999px;    /* pills, circular icon buttons */
+
+  /* Component-level aliases — extracted from the Dashboard / Post-creation
+     screens. Use these in components to express intent (a "card") rather
+     than picking a primitive each time. */
+  --radius-panel:    var(--radius-2xl);   /* hero / outer container          (24) */
+  --radius-card:     var(--radius-xl);    /* cards, suggestion bubbles       (18) */
+  --radius-block:    var(--radius-lg);    /* sub-cards, inline media frames  (14) */
+  --radius-control:  var(--radius-md);    /* buttons, inputs, dropdowns      (10) */
+  --radius-pill:     var(--radius-full);  /* badges, sidebar icons, composer */
+
+  /* Padding semantics — tied to typical container roles */
+  --padding-panel:   var(--space-8);      /* outer panel internal padding    (32) */
+  --padding-card:    var(--space-6);      /* card internal padding           (24) */
+  --padding-block:   var(--space-4);      /* sub-card / pill block padding   (16) */
+  --padding-control: var(--space-3);      /* button / input padding-y        (12) */
+
+  /* ---------------------------------------------------------------------
+     ELEVATION
+     The semantic aliases (--shadow-xs … --shadow-xl) are intentionally
+     soft — single-layer drop shadows with low alpha — to match the
+     near-flat aesthetic of the live screens. Cards rely on a 1px subtle
+     border for separation; the shadow is a quiet accent, not a frame.
+
+     The MUI three-stack ladder (--shadow-elev-*) is kept available for
+     components that explicitly need MUI parity, but it is no longer the
+     default. Use --shadow-md / --shadow-lg in components.
+     --------------------------------------------------------------------- */
+
+  /* Default semantic shadows — soft, single-layer. */
+  --shadow-xs:  0 1px 2px rgba(17, 17, 20, 0.04);
+  --shadow-sm:  0 1px 3px rgba(17, 17, 20, 0.05), 0 1px 2px rgba(17, 17, 20, 0.03);
+  --shadow-md:  0 4px 12px rgba(17, 17, 20, 0.06), 0 1px 3px rgba(17, 17, 20, 0.04);
+  --shadow-lg:  0 12px 32px rgba(17, 17, 20, 0.08), 0 2px 6px rgba(17, 17, 20, 0.04);
+  --shadow-xl:  0 24px 60px rgba(17, 17, 20, 0.12), 0 4px 12px rgba(17, 17, 20, 0.06);
+
+  /* MUI elevation ladder — kept as primitives for explicit MUI-parity use. */
+  --shadow-elev-0:  none;
+  --shadow-elev-1:  0 2px 1px -1px rgba(0,0,0,.20), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
+  --shadow-elev-2:  0 3px 1px -2px rgba(0,0,0,.20), 0 2px 2px 0 rgba(0,0,0,.14), 0 1px 5px 0 rgba(0,0,0,.12);
+  --shadow-elev-4:  0 2px 4px -1px rgba(0,0,0,.20), 0 4px 5px 0 rgba(0,0,0,.14), 0 1px 10px 0 rgba(0,0,0,.12);
+  --shadow-elev-8:  0 5px 5px -3px rgba(0,0,0,.20), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
+  --shadow-elev-16: 0 8px 10px -5px rgba(0,0,0,.20), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12);
+  --shadow-elev-24: 0 11px 15px -7px rgba(0,0,0,.20), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12);
+
+  --shadow-focus-ring: 0 0 0 3px rgba(91, 91, 245, 0.18);   /* indigo-500 18% */
+
+  /* ---------------------------------------------------------------------
+     MOTION
+     Calm, confident easing. Scout's voice in motion: deliberate, not jumpy.
+     --------------------------------------------------------------------- */
+  --duration-instant: 80ms;
+  --duration-fast:    140ms;
+  --duration-base:    220ms;
+  --duration-slow:    360ms;
+  --duration-slower:  560ms;
+
+  --ease-standard:    cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized:  cubic-bezier(0.3, 0, 0, 1);
+  --ease-decelerate:  cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate:  cubic-bezier(0.4, 0, 1, 1);
+
+  /* Scout pacing — used between narrated processing observations */
+  --scout-beat-short: 700ms;
+  --scout-beat:       1100ms;
+  --scout-beat-long:  1500ms;
+
+  /* ---------------------------------------------------------------------
+     LAYOUT
+     --------------------------------------------------------------------- */
+  --sidebar-width:        72px;
+  --content-max-width:    1440px;
+  --chat-column-max:      720px;
+  --preview-column-min:   360px;
+
+  /* MUI breakpoints from the Figma file (GRID styles).
+     xs=444 / sm=600 / md=900 / lg=1200 / xl ≥ 1536. */
+  --bp-xs:  444px;
+  --bp-sm:  600px;
+  --bp-md:  900px;
+  --bp-lg: 1200px;
+  --bp-xl: 1536px;
+
+  /* Z-index scale */
+  --z-base:     0;
+  --z-raised:   10;
+  --z-sticky:   100;
+  --z-overlay:  1000;
+  --z-modal:    1100;
+  --z-toast:    1200;
+}
+
+/* =========================================================================
+   TYPOGRAPHY CLASSES — apply MUI text styles in one shot.
+   Use: <h1 class="t-h1">, <p class="t-body14">, <small class="t-caption">.
+   ========================================================================= */
+.t-h1        { font-family: var(--font-sans); font-size: var(--type-h1-size);        line-height: var(--type-h1-line);        font-weight: var(--type-h1-weight);        letter-spacing: var(--type-h1-track); }
+.t-h2        { font-family: var(--font-sans); font-size: var(--type-h2-size);        line-height: var(--type-h2-line);        font-weight: var(--type-h2-weight);        letter-spacing: var(--type-h2-track); }
+.t-h3        { font-family: var(--font-sans); font-size: var(--type-h3-size);        line-height: var(--type-h3-line);        font-weight: var(--type-h3-weight);        letter-spacing: var(--type-h3-track); }
+.t-h4        { font-family: var(--font-sans); font-size: var(--type-h4-size);        line-height: var(--type-h4-line);        font-weight: var(--type-h4-weight);        letter-spacing: var(--type-h4-track); }
+.t-h5        { font-family: var(--font-sans); font-size: var(--type-h5-size);        line-height: var(--type-h5-line);        font-weight: var(--type-h5-weight);        letter-spacing: var(--type-h5-track); }
+.t-h6        { font-family: var(--font-sans); font-size: var(--type-h6-size);        line-height: var(--type-h6-line);        font-weight: var(--type-h6-weight);        letter-spacing: var(--type-h6-track); }
+.t-subtitle1 { font-family: var(--font-sans); font-size: var(--type-subtitle1-size); line-height: var(--type-subtitle1-line); font-weight: var(--type-subtitle1-weight); letter-spacing: var(--type-subtitle1-track); }
+.t-subtitle2 { font-family: var(--font-sans); font-size: var(--type-subtitle2-size); line-height: var(--type-subtitle2-line); font-weight: var(--type-subtitle2-weight); letter-spacing: var(--type-subtitle2-track); }
+.t-body16    { font-family: var(--font-sans); font-size: var(--type-body16-size);    line-height: var(--type-body16-line);    font-weight: var(--type-body16-weight);    letter-spacing: var(--type-body16-track); }
+.t-body14    { font-family: var(--font-sans); font-size: var(--type-body14-size);    line-height: var(--type-body14-line);    font-weight: var(--type-body14-weight);    letter-spacing: var(--type-body14-track); }
+.t-body12    { font-family: var(--font-sans); font-size: var(--type-body12-size);    line-height: var(--type-body12-line);    font-weight: var(--type-body12-weight);    letter-spacing: var(--type-body12-track); }
+.t-caption   { font-family: var(--font-sans); font-size: var(--type-caption-size);   line-height: var(--type-caption-line);   font-weight: var(--type-caption-weight);   letter-spacing: var(--type-caption-track); }
+.t-overline  { font-family: var(--font-sans); font-size: var(--type-overline-size);  line-height: var(--type-overline-line);  font-weight: var(--type-overline-weight);  letter-spacing: var(--type-overline-track); text-transform: uppercase; }
