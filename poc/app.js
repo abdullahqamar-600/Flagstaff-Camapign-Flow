@@ -608,15 +608,14 @@ function awaitComposer({ placeholder = 'Message Scout…' } = {}) {
 }
 
 async function openingHero() {
-  // Single hero merging the start prompt and the greeting/profile selection.
-  // The logo lands once and stays put through the transition; only the hook
-  // content (title + sub + Start) swaps for the greeting + profile blocks.
+  // Greeting hero: Scout logo animates in, then the greeting beats type out,
+  // then the profile-type picker reveals. No "Start" hook — splash 3's CTA
+  // already framed the journey, so we land directly on Scout's introduction.
   const hero = buildHero();
   $('.conv').prepend(hero);
   document.body.classList.add('mode-hero');
 
   const logoStage = hero.querySelector('.hero__mark');
-  const hookStage = hero.querySelector('.hero__hook');
   const titleEl   = hero.querySelector('.hero__title');
   const subEl     = hero.querySelector('.hero__sub');
   const greet     = {
@@ -626,38 +625,26 @@ async function openingHero() {
     blocks:   hero.querySelector('.hero__blocks'),
   };
 
-  // Beat 0: logo lands (and stays for the rest of the hero).
-  await sleep(120);
-  logoStage.classList.add('hero__stage--in');
-  await sleep(500);
+  // Beat 0: Scout logo animates in (scale + fade) and stays.
+  await sleep(220);
+  logoStage.classList.add('hero__stage--in', 'hero__mark--enter');
+  await sleep(720);
 
-  // Beat 1: hook content reveals (title + sub + Start). Wait for click.
-  hookStage.classList.add('hero__stage--in');
-
-  await new Promise((resolve) => {
-    hero.querySelector('.hero__cta').addEventListener('click', resolve, { once: true });
-  });
-
-  // Hook content exits; logo stays put.
-  hookStage.classList.remove('hero__stage--in');
-  hookStage.classList.add('hero__stage--out');
-  await sleep(360);
-
-  // Beat 2: "Hi, [Name]."
+  // Beat 1: "Hi, [Name]."
   greet.title.classList.add('hero__stage--in');
   await typewriterInto(titleEl, `Hi, ${state.user.name}.`, 55);
-  await sleep(600);
+  await sleep(550);
 
-  // Beat 3: "I'm Scout — your marketing strategist."
+  // Beat 2: "I'm Scout, your marketing strategist."
   greet.sub.classList.add('hero__stage--in');
   await typewriterInto(subEl, "I'm Scout, your marketing strategist.", 45);
-  await sleep(800);
+  await sleep(700);
 
-  // Beat 4: question line.
+  // Beat 3: question line.
   greet.question.classList.add('hero__stage--in');
-  await sleep(500);
+  await sleep(440);
 
-  // Beat 5: profile-type blocks; wait for click before exiting.
+  // Beat 4: profile-type blocks; wait for click before exiting.
   greet.blocks.classList.add('hero__stage--in');
 
   await new Promise((resolve) => {
@@ -698,10 +685,8 @@ async function heroExit(hero) {
 }
 
 function buildHero() {
-  // Two beats, one hero. Logo persists. Hook + greeting share the SAME slot
-  // (grid-stacked) so the title transition happens in place, not "above"
-  // and "below". Hook sits above greet in the stacking order; on Start
-  // click hook fades out and greet stages reveal in the same position.
+  // Greeting hero only — no hook layer. Logo animates in once, then the
+  // greeting beats reveal in sequence, then the profile-type picker shows.
   return el('div', { class: 'hero', id: 'hero' }, [
     el('div', { class: 'hero__inner' }, [
       el('div', {
@@ -709,7 +694,6 @@ function buildHero() {
         html: '<svg width="44" height="44" style="color: var(--primary);"><use href="#i-logo"/></svg>',
       }),
       el('div', { class: 'hero__slot' }, [
-        // Greet (under-layer) — children animate independently.
         el('div', { class: 'hero__greet' }, [
           el('h1', { class: 'hero__title hero__stage' }),
           el('p',  { class: 'hero__sub hero__stage' }),
@@ -717,17 +701,6 @@ function buildHero() {
           el('div', { class: 'hero__blocks hero__stage' }, [
             heroBlock('individual', 'i-individual', 'Individual', 'Solo creator, freelancer, or thought leader'),
             heroBlock('brand',      'i-brand',      'Brand',      'Company, agency, or multi-product brand'),
-          ]),
-        ]),
-        // Hook (over-layer) — full content + Start.
-        el('div', { class: 'hero__hook hero__stage' }, [
-          el('h1', { class: 'hero__hook-title' }, "Let's craft your first post."),
-          el('p',  { class: 'hero__hook-sub' },
-            "Five minutes with Scout and you'll have something worth publishing, built from your voice, your audience, and what's working in your niche right now.",
-          ),
-          el('button', { class: 'hero__cta', type: 'button' }, [
-            el('span', {}, 'Start'),
-            el('span', { html: icon('i-arrow-right') }),
           ]),
         ]),
       ]),
@@ -758,36 +731,67 @@ function heroBlock(acct, _iconId, label, desc) {
 // icon). The text is rendered in a soft indigo shade so it reads as ambient
 // status rather than chat content.
 async function narratedProcess(_label, lines, { lineBeat = 1100, exitBeat = 280, _finalBeat = 0 } = {}) {
-  const slot = el('div', { class: 'proc-line' });
+  // The icon plate stays anchored in place — only its inner SVG cross-fades
+  // and rotates softly between activities. The text uses its existing
+  // up/in & up/out pattern so each phrase reads as a fresh thought.
+  const iconHolder = el('span', { class: 'proc-line__icon' }, [
+    el('span', { class: 'proc-line__icon-pulse', 'aria-hidden': 'true' }),
+    el('span', { class: 'proc-line__icon-glyph', 'aria-hidden': 'true' }),
+  ]);
+  const textHolder = el('span', { class: 'proc-line__text-slot' });
+  const pointer = el('div', { class: 'proc-line__pointer proc-line__pointer--persistent' }, [
+    iconHolder, textHolder,
+  ]);
+  const slot = el('div', { class: 'proc-line' }, [pointer]);
   append(slot);
 
   const normalize = (l) => (typeof l === 'string' ? { icon: 'i-sparkle', text: l } : l);
+  const iconGlyph = iconHolder.querySelector('.proc-line__icon-glyph');
+
+  const swapIcon = async (iconId, isFirst) => {
+    const next = el('span', { class: 'proc-line__icon-frame proc-line__icon-frame--in', html: icon(iconId) });
+    if (isFirst) {
+      iconGlyph.innerHTML = '';
+      iconGlyph.appendChild(next);
+      return;
+    }
+    // Cross-fade in place: old frame fades out while new fades in.
+    const old = iconGlyph.firstChild;
+    iconGlyph.appendChild(next);
+    if (old) {
+      old.classList.remove('proc-line__icon-frame--in');
+      old.classList.add('proc-line__icon-frame--out');
+      setTimeout(() => old.remove(), 320);
+    }
+  };
+
+  const swapText = async (text, isFirst) => {
+    const nextText = el('span', { class: 'proc-line__text-line proc-line__text-line--in' }, text);
+    if (isFirst) {
+      textHolder.innerHTML = '';
+      textHolder.appendChild(nextText);
+      return;
+    }
+    const old = textHolder.firstChild;
+    textHolder.appendChild(nextText);
+    if (old) {
+      old.classList.remove('proc-line__text-line--in');
+      old.classList.add('proc-line__text-line--out');
+      setTimeout(() => old.remove(), 320);
+    }
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const { icon: iconId, text } = normalize(lines[i]);
-
-    // Fade out the current pointer (if any) before swapping content
-    if (slot.firstChild) {
-      slot.firstChild.classList.add('proc-line__pointer--exit');
-      await sleep(exitBeat);
-      slot.innerHTML = '';
-    }
-
-    const pointer = el('div', { class: 'proc-line__pointer' }, [
-      el('span', { class: 'proc-line__icon', html: icon(iconId) }),
-      el('span', { class: 'proc-line__text' }, text),
-    ]);
-    slot.appendChild(pointer);
+    await swapIcon(iconId, i === 0);
+    await swapText(text, i === 0);
     scrollDown();
-
     await sleep(lineBeat);
   }
 
-  // Fade out the last pointer and remove the slot entirely
-  if (slot.firstChild) {
-    slot.firstChild.classList.add('proc-line__pointer--exit');
-    await sleep(exitBeat);
-  }
+  // Exit: fade out the whole pointer.
+  pointer.classList.add('proc-line__pointer--exit');
+  await sleep(exitBeat);
   slot.remove();
   return null;
 }
@@ -1549,14 +1553,12 @@ async function step1_opening() {
   // topics/expertise). Render only now that the persona is known.
   renderKB();
 
-  const ackLead = state.accountType === 'brand'
-    ? "Got it. I'll learn your brand so every post I suggest is built around you, not templates."
-    : `Got it, ${state.user.name}. I'll learn how you think and write so every post I suggest sounds like you, not a template.`;
-  await scoutMsg(ackLead, { typingFor: 900, beat: 300 });
-  await scoutMsg(
-    "By the end I'll have a clear read on your brand, your audience, and what's working in your niche. Roughly five minutes from here.",
-    { typingFor: 1000, beat: 400 }
-  );
+  // Scout greets the user warmly — the conversation begins immediately after
+  // the profile pick. No first-post hook here; that framing came on splash 3.
+  const greeting = state.accountType === 'brand'
+    ? "Great. Let's get to know your brand together — your voice, your audience, what's already working. About five minutes."
+    : `Great, ${state.user.name}. Let's get to know your voice and audience together. About five minutes.`;
+  await scoutMsg(greeting, { typingFor: 900, beat: 400 });
 }
 
 async function step3_product_lines_brand_only() {
@@ -2434,10 +2436,12 @@ async function step_post_directions() {
       resolve(d.iterationId);
     };
 
+    const displayName = state.brand.displayName || state.brand.name || 'You';
+    const handle      = state.brand.handle      || '@you';
+
     directions.forEach((d, i) => {
-      const card = el('button', {
+      const card = el('div', {
         class: 'direction-card',
-        type: 'button',
         onclick: () => {
           if (activeCard === card) return;
           activeCard = card;
@@ -2455,27 +2459,52 @@ async function step_post_directions() {
           commitTimer = setTimeout(() => commit(d), 1500);
         },
       }, [
-        // Generated image preview (mock — gradient with shimmer that resolves
-        // into a labelled visual after a short delay).
-        directionImage(d, i),
-        el('div', { class: 'direction-card__head' }, [
-          el('span', { class: 'direction-card__theme' }, d.group.theme),
-          el('span', { class: 'direction-card__signal' }, d.group.signal || ''),
-        ]),
-        el('div', { class: 'direction-card__body' }, d.body),
-        el('div', { class: 'direction-card__chips' }, [
-          el('span', { class: 'direction-card__chip' }, [
-            el('span', { class: 'direction-card__chip-label' }, 'Tone'),
-            document.createTextNode(d.group.tone),
+        // Twitter-style author row.
+        el('div', { class: 'direction-card__author' }, [
+          el('span', { class: 'direction-card__avatar' }),
+          el('div', { class: 'direction-card__id' }, [
+            el('div', { class: 'direction-card__name-row' }, [
+              document.createTextNode(displayName),
+              el('span', { class: 'direction-card__name-verified', html: icon('i-check') }),
+            ]),
+            el('div', { class: 'direction-card__handle-row' }, [
+              document.createTextNode(handle),
+              el('span', { class: 'direction-card__dot' }, '·'),
+              document.createTextNode('Draft'),
+            ]),
           ]),
-          el('span', { class: 'direction-card__chip' }, [
-            el('span', { class: 'direction-card__chip-label' }, 'Format'),
-            document.createTextNode(d.group.format),
+        ]),
+        // Body text.
+        el('div', { class: 'direction-card__body' }, d.body),
+        // Generated image preview.
+        directionImage(d, i),
+        // Tone/format chips.
+        el('div', { class: 'direction-card__chips' }, [
+          el('span', { class: 'direction-card__chip' }, d.group.tone),
+          el('span', { class: 'direction-card__chip' }, d.group.format),
+        ]),
+        // Twitter-style action row.
+        el('div', { class: 'direction-card__actions' }, [
+          el('span', { class: 'direction-card__action' }, [
+            el('span', { html: icon('i-reply') }),
+            document.createTextNode('Reply'),
+          ]),
+          el('span', { class: 'direction-card__action' }, [
+            el('span', { html: icon('i-repost') }),
+            document.createTextNode('Repost'),
+          ]),
+          el('span', { class: 'direction-card__action' }, [
+            el('span', { html: icon('i-heart') }),
+            document.createTextNode('Like'),
+          ]),
+          el('span', { class: 'direction-card__action' }, [
+            el('span', { html: icon('i-share') }),
+            document.createTextNode('Share'),
           ]),
         ]),
         el('span', { class: 'direction-card__pick' }, [
           document.createTextNode('Use this direction'),
-          el('span', { class: 'tone-card__pick-arrow' }, '→'),
+          el('span', {}, '→'),
         ]),
       ]);
       list.appendChild(card);
@@ -2820,86 +2849,97 @@ const SPLASH_FLAG_KEY = 'flagstaff_seen_splash';
 const splashState = { index: 0, dismissed: false };
 
 async function runSplash() {
-  const stage = $('#splash-stage');
+  const leftStage  = $('#splash-left-stage');
+  const rightStage = $('#splash-right-stage');
   const dots = $$('.splash__dot');
   const skipBtn = $('#splash-skip');
-  if (!stage) return endSplash();
+  const ctaBtn  = $('#splash-cta');
+  const ctaLabel = $('#splash-cta-label');
+  const backBtn = $('#splash-back');
+  if (!leftStage || !rightStage) return endSplash();
 
-  let activeScreen = null;
+  const CTA_LABELS = ['Next', 'Next', "Let's craft your first post"];
+
+  let activeLeft = null;
+  let activeRight = null;
   let inflight = false;
 
-  const mount = async (idx, dir = 'forward') => {
+  const mount = async (idx) => {
     if (inflight) return;
     inflight = true;
-    const next = buildSplashScreen(idx);
-    if (activeScreen) {
-      activeScreen.classList.add('splash__screen--out');
-      await sleep(360);
-      activeScreen.remove();
-    }
-    stage.appendChild(next);
-    activeScreen = next;
+
+    // Crossfade — fade out current content in place, swap, fade in new content.
+    if (activeLeft)  activeLeft.classList.add('splash__pane--out');
+    if (activeRight) activeRight.classList.add('splash__pane--out');
+    await sleep(activeLeft || activeRight ? 220 : 0);
+    if (activeLeft)  activeLeft.remove();
+    if (activeRight) activeRight.remove();
+
+    const nextLeft  = buildSplashLeft(idx);
+    const nextRight = buildSplashRight(idx);
+    leftStage.appendChild(nextLeft);
+    rightStage.appendChild(nextRight);
+    activeLeft = nextLeft;
+    activeRight = nextRight;
+
+    // Force a reflow so the "in" transition plays from the initial state.
+    void nextLeft.offsetHeight;
+    nextLeft.classList.add('splash__pane--in');
+    nextRight.classList.add('splash__pane--in');
+
     dots.forEach((d, i) => d.classList.toggle('splash__dot--active', i === idx));
+    if (ctaLabel) ctaLabel.textContent = CTA_LABELS[idx];
+    if (ctaBtn) ctaBtn.classList.toggle('splash__cta--final', idx === 2);
+    if (backBtn) backBtn.classList.toggle('splash__back--visible', idx > 0);
     splashState.index = idx;
-    // Kick off per-screen animations after mount.
-    requestAnimationFrame(() => playSplashScreen(idx, next));
+
+    requestAnimationFrame(() => playSplashScreen(idx, nextRight));
     inflight = false;
   };
 
   const advance = () => {
-    if (splashState.index < 2) mount(splashState.index + 1, 'forward');
+    if (splashState.index < 2) mount(splashState.index + 1);
     else endSplash();
   };
   const back = () => {
-    if (splashState.index > 0) mount(splashState.index - 1, 'back');
+    if (splashState.index > 0) mount(splashState.index - 1);
   };
 
-  // Wire skip + click-through via event delegation on stage.
-  if (skipBtn) skipBtn.addEventListener('click', endSplash, { once: false });
-  stage.addEventListener('click', (e) => {
-    const action = e.target.closest('[data-splash-action]')?.dataset.splashAction;
-    if (!action) return;
-    if (action === 'next') advance();
-    else if (action === 'back') back();
-    else if (action === 'finish') endSplash();
-  });
+  if (skipBtn) skipBtn.addEventListener('click', endSplash);
+  if (ctaBtn)  ctaBtn.addEventListener('click', advance);
+  if (backBtn) backBtn.addEventListener('click', back);
 
-  mount(0, 'forward');
+  mount(0);
 }
 
 function endSplash() {
   splashState.dismissed = true;
   try { localStorage.setItem(SPLASH_FLAG_KEY, '1'); } catch (e) {}
-  // Fade-out the splash view, then mount the conversation view + hero.
+  // Smooth handoff: pull the splash up slightly while fading it out, then
+  // reveal the conversation view (which contains the greeting hero). The
+  // hero's own beats then take over.
   const view = $('#view-splash');
   if (view) {
-    view.style.transition = 'opacity 320ms ease-out';
-    view.style.opacity = '0';
+    view.classList.add('view--exiting');
     setTimeout(() => {
       showView('view-conv');
+      // Let the chat view fade up softly. The hero plays its own intro.
+      const convView = $('#view-conv');
+      if (convView) {
+        convView.classList.add('view--entering');
+        requestAnimationFrame(() => {
+          convView.classList.add('view--entered');
+        });
+      }
       runConversation();
-    }, 280);
+    }, 460);
   } else {
     showView('view-conv');
     runConversation();
   }
 }
 
-function buildSplashScreen(idx) {
-  const screen = el('section', { class: 'splash__screen' });
-  // LEFT: text content + CTA. RIGHT: graphics/animation block.
-  screen.appendChild(buildSplashTextSide(idx));
-  const blocks = el('div', { class: 'splash__blocks' });
-  if (idx === 0)      blocks.appendChild(buildSplashScreen1Right());
-  else if (idx === 1) blocks.appendChild(buildSplashScreen2Right());
-  else                blocks.appendChild(buildSplashScreen3Right());
-  screen.appendChild(blocks);
-  return screen;
-}
-
-function buildSplashTextSide(idx) {
-  // Left-aligned text content. Heading + body. CTA pinned to bottom-right of
-  // this left half via margin-top: auto on the wrap.
+function buildSplashLeft(idx) {
   const titles = [
     'Posts that sound like you. Not the rest of the internet.',
     'Scout learns your brand from who you actually are.',
@@ -2910,25 +2950,18 @@ function buildSplashTextSide(idx) {
     "Your brand, your audience, your voice, your numbers. Strategy built from you. Not stitched from templates.",
     "Scout learns what works for your niche, then doubles down. Growth, bookmarks, share-of-voice, replies that turn into customers.",
   ];
-  const ctaLabels = ['Next', 'Next', 'Get started'];
-  const finalScreen = idx === 2;
-
-  return el('div', { class: 'splash__bottom' }, [
-    el('div', { class: 'splash__copy' }, [
-      el('h1', { class: 'splash__copy-title' }, titles[idx]),
-      el('p', { class: 'splash__copy-body' }, bodies[idx]),
-    ]),
-    el('div', { class: 'splash__copy-cta-wrap' }, [
-      el('button', {
-        class: 'splash__copy-cta',
-        'data-splash-action': finalScreen ? 'finish' : 'next',
-        type: 'button',
-      }, [
-        document.createTextNode(ctaLabels[idx]),
-        el('span', { html: icon('i-arrow-right') }),
-      ]),
-    ]),
+  return el('div', { class: 'splash__pane splash__copy' }, [
+    el('h1', { class: 'splash__copy-title' }, titles[idx]),
+    el('p', { class: 'splash__copy-body' }, bodies[idx]),
   ]);
+}
+
+function buildSplashRight(idx) {
+  const pane = el('div', { class: 'splash__pane splash__pane--right' });
+  if (idx === 0)      pane.appendChild(buildSplashScreen1Right());
+  else if (idx === 1) pane.appendChild(buildSplashScreen2Right());
+  else                pane.appendChild(buildSplashScreen3Right());
+  return pane;
 }
 
 
@@ -3006,17 +3039,12 @@ function buildPostSkeleton(imgSrc, caption) {
   ]);
 }
 
-/* ---- Screen 2: Knowledge tray + profile ---- */
+/* ---- Screen 2: Knowledge tray + profile ----
+   Visual is built around an indigo-lit canvas with a large WHITE brain
+   illustration as the background. A drawer card matching the conversation's
+   own brand-drawer styling rises from the right and fills section-by-section
+   as Scout works — the AI-creating-knowledge-base moment. */
 function buildSplashScreen2Right() {
-  // Splash 2 right-block redesign:
-  //  - Subtle brain SVG far in the background.
-  //  - Scout avatar using the SAME 4-circle loader animation as the
-  //    conversation: 2×2 dots pulse counter-clockwise while "thinking",
-  //    then settle into the static logo as content fills.
-  //  - A larger drawer card anchored to the bottom-right corner of the
-  //    block — cropped on the right and bottom so only the upper-left
-  //    portion is visible (suggests a real drawer extending off-screen).
-  // The brain SVG sits behind everything.
   const scoutAvatarSvg = `
     <svg viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
       <circle cx="8"  cy="8"  r="6" class="scout-loader__c scout-loader__c--1"/>
@@ -3028,166 +3056,178 @@ function buildSplashScreen2Right() {
   const scoutAvatar = parseSvg(scoutAvatarSvg);
 
   return el('div', { class: 'splash__block splash2-block' }, [
-    el('div', { class: 'splash2-block__brain', html: '<svg viewBox="0 0 22 22"><use href="#i-brain"/></svg>' }),
+    // Background canvas — indigo glow + WHITE brain illustration far back.
+    el('div', { class: 'splash2-canvas', 'aria-hidden': 'true' }, [
+      el('div', { class: 'splash2-canvas__halo' }),
+      el('div', {
+        class: 'splash2-brain',
+        html: '<svg viewBox="0 0 22 22"><use href="#i-brain"/></svg>',
+      }),
+    ]),
 
-    // Scout avatar — identical to the conversation's thinking indicator.
-    el('div', {
-      class: 'splash2-scout-avatar msg__avatar msg__avatar--scout msg__avatar--loading',
-      id: 'splash2-scout-avatar',
-    }, [scoutAvatar]),
+    // Scout pill — avatar + "Working" status. Upper left of the block.
+    el('div', { class: 'splash2-status', id: 'splash2-status' }, [
+      el('div', {
+        class: 'splash2-status__avatar msg__avatar msg__avatar--scout msg__avatar--loading',
+        id: 'splash2-scout-avatar',
+      }, [scoutAvatar]),
+      el('div', { class: 'splash2-status__text' }, [
+        el('div', { class: 'splash2-status__label' }, 'Scout'),
+        el('div', { class: 'splash2-status__activity', id: 'splash2-activity' }, 'Building your knowledge base'),
+      ]),
+    ]),
 
-    // Drawer card cropped at the bottom-right. Larger, with extended height
-    // and width that overflow the block on the right/bottom edges.
+    // Drawer card — same visual language as the conversation's brand-drawer.
     el('div', { class: 'splash2-drawer-card', id: 'splash2-drawer-card' }),
   ]);
 }
 
-// Build the inner contents of the brand drawer card. Designed as a clean,
-// elegant info card with generous whitespace and a clear hierarchy: title →
-// IDENTITY → AUDIENCE → THEMES → TONE. Each section is independently
-// fade-in-able so JS can reveal them sequentially.
+// Panels mirror the conversation's brand-drawer language: large title,
+// uppercase eyebrows, no card chrome. Each section reveals sequentially as
+// Scout "writes" the knowledge base.
 function buildSplash2BrandPanel() {
-  return el('div', { class: 'splash2-panel splash2-panel--brand' }, [
-    el('div', { class: 'splash2-panel__header' }, [
-      el('div', { class: 'splash2-panel__eyebrow' }, [
-        el('span', { class: 'splash2-panel__eyebrow-dot' }),
-        document.createTextNode('Live'),
-      ]),
-      el('h3', { class: 'splash2-panel__title' }, 'About your brand'),
+  return el('div', { class: 'kb-drawer-panel kb-drawer-panel--brand' }, [
+    el('div', { class: 'kb-drawer-panel__head' }, [
+      el('h3', { class: 'kb-drawer-panel__title' }, 'About your brand'),
+      el('p',  { class: 'kb-drawer-panel__sub' }, 'How Scout sees you, refreshed live.'),
     ]),
 
-    el('section', { class: 'splash2-section', 'data-section': 'identity' }, [
-      el('div', { class: 'splash2-section__label' }, 'Identity'),
-      el('div', { class: 'splash2-section__main' }, 'Tkxel'),
-      el('div', { class: 'splash2-section__sub' }, 'Heritage fashion · Karachi'),
+    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'identity' }, [
+      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Identity'),
+      el('div', { class: 'kb-drawer-panel__lede' }, 'Tkxel'),
+      el('div', { class: 'kb-drawer-panel__meta' }, 'Heritage fashion · Karachi'),
     ]),
 
-    el('section', { class: 'splash2-section', 'data-section': 'audience' }, [
-      el('div', { class: 'splash2-section__label' }, 'Audience'),
-      el('div', { class: 'splash2-section__row' }, [
-        el('div', { class: 'splash2-avatars' }, [
-          el('span', { class: 'splash2-avatars__a', style: '--c: #fbcfe8;' }),
-          el('span', { class: 'splash2-avatars__a', style: '--c: #c7d2fe;' }),
-          el('span', { class: 'splash2-avatars__a', style: '--c: #bbf7d0;' }),
+    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'audience' }, [
+      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Audience'),
+      el('div', { class: 'kb-drawer-panel__row' }, [
+        el('div', { class: 'kb-drawer-panel__avatars' }, [
+          el('span', { class: 'kb-drawer-panel__avatar', style: '--c: #fbcfe8;' }),
+          el('span', { class: 'kb-drawer-panel__avatar', style: '--c: #c7d2fe;' }),
+          el('span', { class: 'kb-drawer-panel__avatar', style: '--c: #bbf7d0;' }),
         ]),
-        el('div', { class: 'splash2-section__main' }, 'Women 22–34'),
+        el('div', { class: 'kb-drawer-panel__lede kb-drawer-panel__lede--md' }, 'Women 22–34'),
       ]),
-      el('div', { class: 'splash2-section__sub' }, 'Pakistan & diaspora · culturally curious, mobile-first'),
+      el('div', { class: 'kb-drawer-panel__meta' }, 'Pakistan & diaspora · culturally curious, mobile-first'),
     ]),
 
-    el('section', { class: 'splash2-section', 'data-section': 'themes' }, [
-      el('div', { class: 'splash2-section__label' }, 'Themes'),
-      el('div', { class: 'splash2-pills' }, [
-        el('span', { class: 'splash2-pill' }, 'Heritage'),
-        el('span', { class: 'splash2-pill' }, 'Sustainability'),
-        el('span', { class: 'splash2-pill' }, 'Local artisanship'),
+    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'themes' }, [
+      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Themes'),
+      el('div', { class: 'kb-drawer-panel__pills' }, [
+        el('span', { class: 'kb-drawer-panel__pill' }, 'Heritage'),
+        el('span', { class: 'kb-drawer-panel__pill' }, 'Sustainability'),
+        el('span', { class: 'kb-drawer-panel__pill' }, 'Local artisanship'),
       ]),
     ]),
 
-    el('section', { class: 'splash2-section', 'data-section': 'tone' }, [
-      el('div', { class: 'splash2-section__label' }, 'Tone'),
-      el('div', { class: 'splash2-tone' }, [
-        el('span', { class: 'splash2-tone__mark', html: icon('i-heart') }),
-        el('span', { class: 'splash2-tone__label' }, 'Warm, story-led'),
-      ]),
+    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'tone' }, [
+      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Tone'),
+      el('div', { class: 'kb-drawer-panel__lede kb-drawer-panel__lede--md' }, 'Warm, story-led'),
+      el('div', { class: 'kb-drawer-panel__meta' }, 'Personal, postcode over aesthetic, names the artisan.'),
     ]),
   ]);
 }
 
-// Build the inner contents of the "What's working" panel. Same surface as
-// the brand panel but populated with trend signals.
 function buildSplash2TrendingPanel() {
-  return el('div', { class: 'splash2-panel splash2-panel--trending' }, [
-    el('div', { class: 'splash2-panel__header' }, [
-      el('div', { class: 'splash2-panel__eyebrow splash2-panel__eyebrow--warm' }, [
-        el('span', { class: 'splash2-panel__eyebrow-dot' }),
-        document.createTextNode('Trending'),
-      ]),
-      el('h3', { class: 'splash2-panel__title' }, "What's working"),
+  return el('div', { class: 'kb-drawer-panel kb-drawer-panel--trending' }, [
+    el('div', { class: 'kb-drawer-panel__head' }, [
+      el('h3', { class: 'kb-drawer-panel__title' }, "What's working"),
+      el('p',  { class: 'kb-drawer-panel__sub' }, 'Live signal Scout is tracking for you.'),
     ]),
 
-    el('section', { class: 'splash2-section', 'data-section': 'topic' }, [
-      el('div', { class: 'splash2-section__label' }, 'Top topic'),
-      el('div', { class: 'splash2-section__main' }, 'Heritage origin stories'),
-      el('div', { class: 'splash2-topic-bar' }, [
-        el('div', { class: 'splash2-topic-bar__track' }, [
-          el('div', { class: 'splash2-topic-bar__fill', style: 'width: 92%;' }),
+    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'topic' }, [
+      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Top topic'),
+      el('div', { class: 'kb-drawer-panel__lede' }, 'Heritage origin stories'),
+      el('div', { class: 'kb-drawer-panel__bar' }, [
+        el('div', { class: 'kb-drawer-panel__bar-track' }, [
+          el('div', { class: 'kb-drawer-panel__bar-fill', style: 'width: 92%;' }),
         ]),
-        el('div', { class: 'splash2-topic-bar__pct' }, '+92%'),
+        el('div', { class: 'kb-drawer-panel__bar-pct' }, '+92%'),
       ]),
     ]),
 
-    el('section', { class: 'splash2-section', 'data-section': 'trend' }, [
-      el('div', { class: 'splash2-section__label' }, 'Top trend'),
-      el('div', { class: 'splash2-trend' }, [
-        el('span', { class: 'splash2-trend__hash' }, '#'),
+    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'trend' }, [
+      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Top trend'),
+      el('div', { class: 'kb-drawer-panel__lede' }, [
+        el('span', { class: 'kb-drawer-panel__hash' }, '#'),
         document.createTextNode('SouthAsianHeritageWeek'),
       ]),
-      el('div', { class: 'splash2-section__sub' }, [
-        el('strong', {}, '+4.2× '),
-        document.createTextNode('week-on-week · spiking now'),
-      ]),
+      el('div', { class: 'kb-drawer-panel__meta' }, '+4.2× week-on-week · spiking now'),
     ]),
 
-    el('section', { class: 'splash2-section', 'data-section': 'peak' }, [
-      el('div', { class: 'splash2-section__label' }, 'Peak window'),
-      el('div', { class: 'splash2-peak' }, [
-        el('div', { class: 'splash2-peak__strip' }, [
-          el('div', { class: 'splash2-peak__highlight' }),
+    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'peak' }, [
+      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Peak window'),
+      el('div', { class: 'kb-drawer-panel__lede kb-drawer-panel__lede--md' }, 'Weekdays 2–4pm PKT'),
+      el('div', { class: 'kb-drawer-panel__peak' }, [
+        el('div', { class: 'kb-drawer-panel__peak-track' }, [
+          el('div', { class: 'kb-drawer-panel__peak-highlight' }),
         ]),
-        el('div', { class: 'splash2-peak__labels' }, [
+        el('div', { class: 'kb-drawer-panel__peak-labels' }, [
           el('span', {}, '12a'), el('span', {}, '6a'), el('span', {}, '12p'), el('span', {}, '6p'), el('span', {}, '12a'),
         ]),
       ]),
-      el('div', { class: 'splash2-section__main' }, 'Weekdays 2–4pm PKT'),
     ]),
   ]);
 }
 
-/* ---- Screen 3: Outcomes ---- */
-
-
+/* ---- Screen 3: Outcomes ----
+   A 3×3 grid of post skeleton cards. The MIDDLE tile is a stat card that
+   shows a positive engagement metric with a small line graph trending up. */
 function buildSplashScreen3Right() {
-  const labels = ['Founder note', 'Craft reel', 'Origin story', 'Hot take', 'Behind-the-scenes', 'Data piece'];
-  const heights = [42, 58, 92, 36, 50, 28]; // % heights, "Origin story" is the standout
-  const bars = el('div', { class: 'splash-bars' },
-    labels.map((label, i) => el('div', {
-      class: 'splash-bar' + (i === 2 ? ' splash-bar--top' : ''),
-    }, [
-      el('div', { class: 'splash-bar__fill', 'data-bar-height': String(heights[i]) }),
-      el('div', { class: 'splash-bar__label' }, label),
-    ])),
-  );
-  const topPost = el('div', { class: 'splash-top-post-wrap' }, [
-    // Rising heart particles above the top-post — visualises "live engagement."
-    el('div', { class: 'splash-top-post__hearts', 'aria-hidden': 'true' }, [
-      el('span', { class: 'splash-top-post__heart', style: 'left: 18%; animation-delay: 0s;' }, '♥'),
-      el('span', { class: 'splash-top-post__heart', style: 'left: 52%; animation-delay: 1.4s;' }, '♥'),
-      el('span', { class: 'splash-top-post__heart', style: 'left: 78%; animation-delay: 2.6s;' }, '♥'),
-    ]),
-    el('div', { class: 'splash-top-post' }, [
-      el('div', { class: 'splash-top-post__name-row' }, [
-        document.createTextNode('a brand like yours'),
-        el('span', { class: 'splash-polished__verified', html: icon('i-check') }),
-      ]),
-      el('div', { class: 'splash-top-post__handle' }, '@on_flagstaff · 2d'),
-      el('div', { class: 'splash-top-post__body' }, "Heritage isn't an aesthetic. It's a postcode and a person who can name the stitch."),
-      el('div', { class: 'splash-top-post__metric' }, '↑ 4.2× expected reach · saves > likes'),
-    ]),
+  const POSTS = [
+    { ext: 'jpeg', caption: "Heritage isn't an aesthetic. It's a postcode." },
+    { ext: 'png',  caption: 'Where the embroidery actually comes from.' },
+    { ext: 'png',  caption: "Spent the morning at Bibi's workshop." },
+    { ext: 'png',  caption: 'New drop. Same hands, same story.' },
+    // Middle tile → replaced by a stat card.
+    null,
+    { ext: 'png',  caption: 'Three reasons your audience saves your posts.' },
+    { ext: 'png',  caption: "Mid-century roots, modern silhouettes." },
+    { ext: 'png',  caption: 'Workshop notes from Sindh.' },
+    { ext: 'jpeg', caption: 'The hands behind the label.' },
+  ];
+
+  const tiles = POSTS.map((p, i) => {
+    if (p === null) return buildSplash3StatTile();
+    const imgIdx = i < 4 ? i + 1 : i; // skip the middle slot's image index
+    const src = `/Posts/${imgIdx}.${p.ext}`;
+    return el('div', { class: 'splash3-tile' }, [buildPostSkeleton(src, p.caption)]);
+  });
+
+  return el('div', { class: 'splash__block splash3-block' }, [
+    el('div', { class: 'splash3-grid' }, tiles),
   ]);
-  const ticker = el('div', { class: 'splash-ticker' }, [
-    el('span', { class: 'splash-ticker__item' }, [el('strong', { id: 'splash-tick-replies' }, '892'), document.createTextNode(' replies')]),
-    el('span', { class: 'splash-ticker__item' }, [el('strong', { id: 'splash-tick-likes' }, '12,403'), document.createTextNode(' likes')]),
-    el('span', { class: 'splash-ticker__item' }, [el('strong', { id: 'splash-tick-saves' }, '3,812'), document.createTextNode(' saves')]),
-  ]);
-  return el('div', { class: 'splash__block splash__block--wide' }, [
-    el('div', { class: 'splash-dashboard' }, [
-      el('div', { class: 'splash-dashboard__eyebrow' }, [
-        el('span', { class: 'splash-dashboard__eyebrow-dot' }),
-        document.createTextNode('1 of 6 posts above niche avg'),
+}
+
+// The middle stat tile — value, label, and a small line graph trending up.
+function buildSplash3StatTile() {
+  // Sparkline path: ascending, with a small dip then strong climb.
+  // viewBox 0 0 100 40; data points reflect a positive trend.
+  const linePath  = 'M2,32 L14,28 L26,30 L38,22 L50,24 L62,16 L74,14 L86,8 L98,4';
+  const fillPath  = 'M2,32 L14,28 L26,30 L38,22 L50,24 L62,16 L74,14 L86,8 L98,4 L98,40 L2,40 Z';
+  return el('div', { class: 'splash3-tile splash3-tile--stat' }, [
+    el('div', { class: 'splash3-stat' }, [
+      el('div', { class: 'splash3-stat__eyebrow' }, [
+        el('span', { class: 'splash3-stat__dot' }),
+        document.createTextNode('Engagement · 30d'),
       ]),
-      ticker,
-      el('div', { class: 'splash-dashboard__row' }, [bars, topPost]),
+      el('div', { class: 'splash3-stat__value', id: 'splash3-stat-value' }, '↑ 3.8×'),
+      el('div', { class: 'splash3-stat__label' }, 'vs your previous baseline'),
+      el('div', { class: 'splash3-stat__chart' }, [
+        parseSvg(
+          '<svg viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="splash3-stat__svg" aria-hidden="true">' +
+            '<defs>' +
+              '<linearGradient id="splash3-grad" x1="0" y1="0" x2="0" y2="1">' +
+                '<stop offset="0%"  stop-color="#a78bfa" stop-opacity="0.35"/>' +
+                '<stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>' +
+              '</linearGradient>' +
+            '</defs>' +
+            '<path class="splash3-stat__svg-fill" d="' + fillPath + '" fill="url(#splash3-grad)"/>' +
+            '<path class="splash3-stat__svg-line" d="' + linePath + '" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<circle class="splash3-stat__svg-dot" cx="98" cy="4" r="3.4" fill="#7c3aed"/>' +
+          '</svg>'
+        ),
+      ]),
     ]),
   ]);
 }
@@ -3203,11 +3243,28 @@ function playSplashScreen(idx, root) {
     return;
   }
   if (idx === 2) {
-    playSplashHeroStat(root);
-    playSplashBars(root);
-    playSplashTicker(root);
+    playSplash3Stat(root);
     return;
   }
+}
+
+// Animate the splash 3 stat value counting up.
+function playSplash3Stat(root) {
+  const node = root.querySelector('#splash3-stat-value');
+  if (!node) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const target = 3.8;
+  const start = performance.now();
+  const dur = 1200;
+  const tick = (now) => {
+    if (!root.isConnected) return;
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const v = (target * eased).toFixed(1);
+    node.textContent = `↑ ${v}×`;
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 }
 
 // Splash 1: hearts spawn rarely at random x positions along the wheel arc
@@ -3247,17 +3304,22 @@ function playSplashWheelHearts(root) {
 // The whole loop repeats while the screen is mounted.
 async function playSplashScreen2Sequence(root) {
   const scoutAvatar = root.querySelector('#splash2-scout-avatar');
-  const drawerCard = root.querySelector('#splash2-drawer-card');
+  const drawerCard  = root.querySelector('#splash2-drawer-card');
+  const activityEl  = root.querySelector('#splash2-activity');
   if (!scoutAvatar || !drawerCard) return;
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const activityText = {
+    brand:    'Building your brand knowledge',
+    trending: "Tracking what's working in your niche",
+  };
 
   const mountPanel = (kind) => {
     drawerCard.innerHTML = '';
     drawerCard.appendChild(kind === 'brand' ? buildSplash2BrandPanel() : buildSplash2TrendingPanel());
+    if (activityEl) activityEl.textContent = activityText[kind];
   };
 
-  // Scout "thinking" → 4-circle loader animates.
-  // Scout "settled" → static logo (same as conversation's scoutMsg).
   const setScoutThinking = () => {
     scoutAvatar.classList.add('msg__avatar--loading');
     scoutAvatar.innerHTML = '';
@@ -3275,40 +3337,30 @@ async function playSplashScreen2Sequence(root) {
     scoutAvatar.innerHTML = '<svg><use href="#i-logo"/></svg>';
   };
 
-  const showScout = async () => {
-    setScoutThinking();
-    scoutAvatar.classList.add('splash2-scout-avatar--in');
-    await sleep(reduced ? 0 : 320);
-  };
-  const hideScout = async () => {
-    scoutAvatar.classList.remove('splash2-scout-avatar--in');
-    await sleep(reduced ? 0 : 220);
-  };
   const revealPanel = async () => {
+    setScoutThinking();
     drawerCard.classList.add('splash2-drawer-card--in');
-    await sleep(reduced ? 0 : 420);
-    // Scout has now arrived at an answer — swap loader for static logo.
+    await sleep(reduced ? 0 : 480);
     setScoutSettled();
-    // Reveal sections sequentially.
-    const sections = drawerCard.querySelectorAll('.splash2-section');
-    drawerCard.querySelector('.splash2-panel__header')?.classList.add('splash2-panel__header--in');
-    await sleep(reduced ? 0 : 260);
+    // Reveal sections sequentially — feels like Scout writing them in.
+    drawerCard.querySelector('.kb-drawer-panel__head')?.classList.add('kb-drawer-panel__section--in');
+    await sleep(reduced ? 0 : 240);
+    const sections = drawerCard.querySelectorAll('.kb-drawer-panel__section');
     for (const s of sections) {
-      s.classList.add('splash2-section--in');
-      await sleep(reduced ? 0 : 220);
+      s.classList.add('kb-drawer-panel__section--in');
+      await sleep(reduced ? 0 : 260);
     }
-    // Topic bar fills (trending panel only).
-    const topicFill = drawerCard.querySelector('.splash2-topic-bar__fill');
+    const topicFill = drawerCard.querySelector('.kb-drawer-panel__bar-fill');
     if (topicFill) {
       const target = topicFill.style.width;
       topicFill.style.width = '0%';
       requestAnimationFrame(() => { topicFill.style.width = target || '92%'; });
     }
-    await sleep(reduced ? 0 : 1600);
+    await sleep(reduced ? 0 : 1700);
   };
   const hidePanel = async () => {
     drawerCard.classList.remove('splash2-drawer-card--in');
-    await sleep(reduced ? 0 : 360);
+    await sleep(reduced ? 0 : 380);
     drawerCard.innerHTML = '';
   };
 
@@ -3320,75 +3372,22 @@ async function playSplashScreen2Sequence(root) {
   observer.observe(document.body, { childList: true, subtree: true });
 
   while (!stopped && root.isConnected) {
-    await showScout();
     mountPanel('brand');
     await revealPanel();
     await hidePanel();
-    await hideScout();
     if (stopped || !root.isConnected) break;
     await sleep(reduced ? 0 : 400);
 
-    await showScout();
     mountPanel('trending');
     await revealPanel();
     await hidePanel();
-    await hideScout();
     if (stopped || !root.isConnected) break;
-    await sleep(reduced ? 0 : 700);
+    await sleep(reduced ? 0 : 600);
   }
 }
 
 
 
-function playSplashHeroStat(root) {
-  const node = root.querySelector('#splash-hero-stat');
-  if (!node) return;
-  const target = parseFloat(node.dataset.target || '3.8');
-  const start = performance.now();
-  const dur = 1100;
-  const tick = (now) => {
-    const t = Math.min(1, (now - start) / dur);
-    const eased = 1 - Math.pow(1 - t, 3);
-    const v = (target * eased).toFixed(1);
-    node.textContent = `↑ ${v}×`;
-    if (t < 1 && root.isConnected) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-  // Sparkbars (sub stats).
-  root.querySelectorAll('.splash-stat-sub__bar-fill').forEach((b, i) => {
-    setTimeout(() => { b.style.width = (b.dataset.barPct || '0') + '%'; }, 200 + i * 120);
-  });
-}
-
-function playSplashBars(root) {
-  const bars = root.querySelectorAll('.splash-bar__fill');
-  bars.forEach((b, i) => {
-    const h = b.dataset.barHeight || '0';
-    setTimeout(() => { b.style.height = h + '%'; }, 200 + i * 70);
-  });
-}
-
-function playSplashTicker(root) {
-  const targets = [
-    { id: 'splash-tick-replies', step: 1, max: 12 },
-    { id: 'splash-tick-likes', step: 8, max: 60 },
-    { id: 'splash-tick-saves', step: 3, max: 30 },
-  ];
-  targets.forEach(t => {
-    const node = root.querySelector('#' + t.id);
-    if (!node) return;
-    let added = 0;
-    const tick = () => {
-      if (!root.isConnected || added >= t.max) return;
-      const cur = parseInt(node.textContent.replace(/[^0-9]/g, ''), 10) || 0;
-      const next = cur + t.step;
-      node.textContent = next.toLocaleString();
-      added += t.step;
-      setTimeout(tick, 1200);
-    };
-    setTimeout(tick, 1400);
-  });
-}
 
 /* =========================================================================
    18. BOOT
