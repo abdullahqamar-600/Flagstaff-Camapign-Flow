@@ -5529,19 +5529,20 @@ body.mode-hero .conv__stream {
 }
 
 /* =========================================================================
-   SPLASH 2 — AI building a knowledge base. The screen reads as Scout's
-   workspace: a deep indigo canvas with a large WHITE brain illustration
-   sitting far in the background, a Scout status pill at the top-left, and
-   a clean drawer card that rises from the bottom and fills section by
-   section as Scout works.
+   SPLASH 2 — Scout's two knowledge blocks (Brand + Trending), the same
+   widget the user will see inside the conversation, here scaled up and
+   shown filling section by section. Just Scout's logo at the top —
+   no chrome, no status text — so the work itself is the focal point.
    ========================================================================= */
 .splash2-block {
-  background: linear-gradient(160deg, #1e1b4b 0%, #3b0764 60%, #4c1d95 100%);
-  padding: 0;
+  background: #fafafe;
+  padding: 56px 48px;
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
 .splash2-canvas {
   position: absolute; inset: 0;
@@ -5550,99 +5551,119 @@ body.mode-hero .conv__stream {
 }
 .splash2-canvas__halo {
   position: absolute;
-  left: 50%; top: 56%;
-  width: 720px; height: 720px;
+  left: 50%; top: 40%;
+  width: 620px; height: 620px;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.35), rgba(99, 102, 241, 0.10) 45%, transparent 70%);
+  background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.18), rgba(99, 102, 241, 0.06) 45%, transparent 70%);
   filter: blur(20px);
 }
-.splash2-brain {
-  position: absolute;
-  left: 50%; top: 50%;
-  width: 460px; height: 460px;
-  transform: translate(-50%, -52%) rotate(-6deg);
-  color: #fff;
-  opacity: 0.10;
-  animation: splash2BrainPulse 8s ease-in-out infinite;
-}
-.splash2-brain svg {
-  width: 100%; height: 100%;
-  fill: none; stroke: currentColor; stroke-width: 1.5;
-}
-@keyframes splash2BrainPulse {
-  0%, 100% { opacity: 0.08; transform: translate(-50%, -52%) rotate(-6deg) scale(1); }
-  50%      { opacity: 0.14; transform: translate(-50%, -52%) rotate(-6deg) scale(1.03); }
-}
 
-/* Scout status pill — sits upper-left. Avatar uses the same 4-circle loader
-   as the conversation; activity text describes what Scout is doing. */
-.splash2-status {
-  position: absolute;
-  top: 28px; left: 28px;
-  z-index: 3;
-  display: inline-flex; align-items: center; gap: 12px;
-  padding: 10px 16px 10px 12px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  color: #fff;
-}
-.splash2-status__avatar {
-  width: 28px; height: 28px;
+/* Scout mark — the four-circle logo at the top of the workspace, same
+   loader animation as the conversation. */
+.splash2-mark {
+  position: relative;
+  z-index: 2;
+  width: 40px; height: 40px;
   display: inline-flex; align-items: center; justify-content: center;
+  align-self: flex-start;
+  color: var(--primary);
   background: transparent;
-  color: #fff;
 }
-.splash2-status__avatar svg { width: 100%; height: 100%; display: block; }
-.splash2-status__avatar.msg__avatar--loading .scout-loader__c {
-  fill: #fff;
+.splash2-mark svg { width: 100%; height: 100%; display: block; }
+.splash2-mark.msg__avatar--loading .scout-loader__c {
+  fill: var(--primary);
   transform-box: fill-box;
   transform-origin: center;
   animation: scoutLoaderPulse 1.4s ease-in-out infinite;
 }
-.splash2-status__avatar.msg__avatar--loading .scout-loader__c--1 { animation-delay: 0ms; }
-.splash2-status__avatar.msg__avatar--loading .scout-loader__c--2 { animation-delay: 350ms; }
-.splash2-status__avatar.msg__avatar--loading .scout-loader__c--3 { animation-delay: 700ms; }
-.splash2-status__avatar.msg__avatar--loading .scout-loader__c--4 { animation-delay: 1050ms; }
-.splash2-status__text { display: flex; flex-direction: column; gap: 1px; }
-.splash2-status__label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
-}
-.splash2-status__activity {
-  font-size: 13px;
-  font-weight: 500;
-  color: #fff;
-  letter-spacing: -0.005em;
-}
+.splash2-mark.msg__avatar--loading .scout-loader__c--1 { animation-delay: 0ms; }
+.splash2-mark.msg__avatar--loading .scout-loader__c--2 { animation-delay: 350ms; }
+.splash2-mark.msg__avatar--loading .scout-loader__c--3 { animation-delay: 700ms; }
+.splash2-mark.msg__avatar--loading .scout-loader__c--4 { animation-delay: 1050ms; }
 
-/* The drawer card — white surface, generous padding, raised. Anchored to
-   the bottom-right so it reads as a drawer rising into view. */
-.splash2-drawer-card {
-  position: absolute;
-  right: 28px;
-  bottom: 28px;
-  width: calc(100% - 56px);
-  max-width: 520px;
-  min-height: 360px;
-  background: #fff;
-  border-radius: 22px;
-  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.35);
-  padding: 32px 32px 28px;
-  opacity: 0;
-  transform: translateY(36px);
-  transition:
-    opacity 480ms var(--ease-emphasized),
-    transform 480ms var(--ease-emphasized);
+/* Stack of knowledge blocks — same widget the user sees inside the chat,
+   scaled up so the contents read at presentation distance. */
+.splash2-kb-stack {
+  position: relative;
   z-index: 2;
-  overflow: hidden;
+  flex: 1;
+  display: flex; flex-direction: column;
+  gap: 18px;
+  min-height: 0;
 }
-.splash2-drawer-card--in { opacity: 1; transform: translateY(0); }
+.splash2-kb {
+  padding: 20px 22px;
+  border-radius: 18px;
+  font-size: 14px;
+  transition:
+    background-color 360ms var(--ease-standard),
+    opacity 360ms var(--ease-standard),
+    border-color 360ms var(--ease-standard),
+    box-shadow 360ms var(--ease-standard);
+}
+.splash2-kb.kb-block--empty {
+  background: rgba(255, 255, 255, 0.6);
+  opacity: 0.5;
+}
+.splash2-kb.kb-block--active {
+  background: #fff;
+  opacity: 1;
+  border-color: var(--border-subtle);
+  box-shadow: 0 12px 32px rgba(79, 70, 229, 0.10);
+}
+.splash2-kb.kb-block--filled {
+  background: #fff;
+  opacity: 1;
+  border-color: var(--border-subtle);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+}
+.splash2-kb.kb-block--expanded {
+  background: #fff;
+  opacity: 1;
+  border-color: var(--border-subtle);
+  box-shadow: 0 12px 32px rgba(79, 70, 229, 0.10);
+}
+.splash2-kb .kb-block__title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.splash2-kb .kb-block__summary {
+  font-size: 13px;
+  margin-top: 4px;
+}
+.splash2-kb .kb-block__body {
+  margin-top: 12px;
+  gap: 0;
+}
+.splash2-kb .kb-block__fact {
+  padding: 10px 0;
+  border-top: 1px solid var(--border-subtle);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 280ms var(--ease-emphasized), transform 280ms var(--ease-emphasized);
+}
+.splash2-kb .kb-block__fact:first-child { border-top: 0; }
+.splash2-fact--pre { opacity: 0; transform: translateY(6px); }
+.splash2-fact--in  { opacity: 1; transform: translateY(0); }
+.splash2-kb .kb-block__fact-label {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+}
+.splash2-kb .kb-block__fact-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+.splash2-kb .kb-block__status {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 500;
+}
 
 /* Conversation-grade KB drawer panel — same vocabulary as .brand-drawer
    in the chat: large title, uppercase eyebrows, generous spacing. Fewer
@@ -5761,12 +5782,12 @@ body.mode-hero .conv__stream {
 }
 
 /* =========================================================================
-   SPLASH 3 — A 3×3 grid of post cards. The middle tile is a stat card with
-   an upward-trending sparkline. Posts at the edges fade out gracefully.
+   SPLASH 3 — The 3×3 post grid fills the whole right section. The middle
+   tile is a WHITE engagement stat card with an upward-trending sparkline.
    ========================================================================= */
 .splash3-block {
   background: #fff;
-  padding: 28px;
+  padding: 0;
   display: flex;
   align-items: stretch;
   justify-content: stretch;
@@ -5776,10 +5797,10 @@ body.mode-hero .conv__stream {
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   gap: 14px;
+  padding: 18px;
   width: 100%;
+  height: 100%;
   min-height: 0;
-  mask-image: radial-gradient(140% 130% at 50% 50%, #000 60%, transparent 100%);
-  -webkit-mask-image: radial-gradient(140% 130% at 50% 50%, #000 60%, transparent 100%);
 }
 .splash3-tile {
   position: relative;
@@ -5791,13 +5812,13 @@ body.mode-hero .conv__stream {
   width: 100%; height: 100%;
 }
 
-/* Stat tile — sits in the centre of the grid. Indigo gradient, large value,
-   sparkline trending upward. */
+/* Stat tile — white surface, raised, centered on the grid. */
 .splash3-tile--stat {
-  border-radius: 14px;
-  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
-  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.18);
-  padding: 16px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  padding: 18px;
   align-items: stretch;
 }
 .splash3-stat {
@@ -5820,7 +5841,7 @@ body.mode-hero .conv__stream {
   animation: splashLiveDot 1.6s ease-in-out infinite;
 }
 .splash3-stat__value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: var(--primary);
   letter-spacing: -0.02em;
@@ -5835,7 +5856,7 @@ body.mode-hero .conv__stream {
 .splash3-stat__chart {
   margin-top: auto;
   width: 100%;
-  height: 44px;
+  height: 50px;
 }
 .splash3-stat__svg { width: 100%; height: 100%; display: block; }
 .splash3-stat__svg-line {

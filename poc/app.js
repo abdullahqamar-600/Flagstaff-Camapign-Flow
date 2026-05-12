@@ -1556,8 +1556,8 @@ async function step1_opening() {
   // Scout greets the user warmly — the conversation begins immediately after
   // the profile pick. No first-post hook here; that framing came on splash 3.
   const greeting = state.accountType === 'brand'
-    ? "Great. Let's get to know your brand together — your voice, your audience, what's already working. About five minutes."
-    : `Great, ${state.user.name}. Let's get to know your voice and audience together. About five minutes.`;
+    ? "Perfect. I'll learn your brand the way you'd describe it to a friend — your voice, your audience, what's already landing. Five minutes, max."
+    : `Perfect, ${state.user.name}. I'll learn how you think and write — your voice, your audience, what's already landing. Five minutes, max.`;
   await scoutMsg(greeting, { typingFor: 900, beat: 400 });
 }
 
@@ -2940,15 +2940,19 @@ function endSplash() {
 }
 
 function buildSplashLeft(idx) {
+  // UX-copy direction for the splash:
+  // 1. Open with a sharper promise that names the alternative (templated AI).
+  // 2. Show the work: a knowledge base built from the user, not stock data.
+  // 3. End on outcome: the metrics that actually matter for creators.
   const titles = [
-    'Posts that sound like you. Not the rest of the internet.',
-    'Scout learns your brand from who you actually are.',
-    'Posts that move the numbers, not just impressions.',
+    'Posts that sound like you. Not like everyone else on the internet.',
+    'A knowledge base, built from you.',
+    'Numbers that matter. Not just impressions.',
   ];
   const bodies = [
-    "We're building an AI marketing partner that learns your voice, your audience, and what's working in your niche, then writes the posts only you could write.",
-    "Your brand, your audience, your voice, your numbers. Strategy built from you. Not stitched from templates.",
-    "Scout learns what works for your niche, then doubles down. Growth, bookmarks, share-of-voice, replies that turn into customers.",
+    "Scout is your AI marketing partner. It learns your voice, your audience, and the trends moving your niche right now, then drafts the posts only you could write.",
+    "Your brand. Your audience. Your voice. Your numbers. Scout assembles all of it into one living knowledge base, refreshed every time you sit down to post.",
+    "Scout finds what's working for your niche and doubles down. Growth, saves, share of voice, replies that turn into customers, all tracked from day one.",
   ];
   return el('div', { class: 'splash__pane splash__copy' }, [
     el('h1', { class: 'splash__copy-title' }, titles[idx]),
@@ -3039,11 +3043,11 @@ function buildPostSkeleton(imgSrc, caption) {
   ]);
 }
 
-/* ---- Screen 2: Knowledge tray + profile ----
-   Visual is built around an indigo-lit canvas with a large WHITE brain
-   illustration as the background. A drawer card matching the conversation's
-   own brand-drawer styling rises from the right and fills section-by-section
-   as Scout works — the AI-creating-knowledge-base moment. */
+/* ---- Screen 2: Knowledge blocks ----
+   The same Brand + Trending knowledge blocks the user sees inside the
+   conversation, here scaled up and shown filling section by section.
+   Just Scout's logo at the top — no status pill — so the focus stays on
+   the work being built. */
 function buildSplashScreen2Right() {
   const scoutAvatarSvg = `
     <svg viewBox="0 0 32 32" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -3056,131 +3060,107 @@ function buildSplashScreen2Right() {
   const scoutAvatar = parseSvg(scoutAvatarSvg);
 
   return el('div', { class: 'splash__block splash2-block' }, [
-    // Background canvas — indigo glow + WHITE brain illustration far back.
     el('div', { class: 'splash2-canvas', 'aria-hidden': 'true' }, [
       el('div', { class: 'splash2-canvas__halo' }),
-      el('div', {
-        class: 'splash2-brain',
-        html: '<svg viewBox="0 0 22 22"><use href="#i-brain"/></svg>',
-      }),
     ]),
 
-    // Scout pill — avatar + "Working" status. Upper left of the block.
-    el('div', { class: 'splash2-status', id: 'splash2-status' }, [
-      el('div', {
-        class: 'splash2-status__avatar msg__avatar msg__avatar--scout msg__avatar--loading',
-        id: 'splash2-scout-avatar',
-      }, [scoutAvatar]),
-      el('div', { class: 'splash2-status__text' }, [
-        el('div', { class: 'splash2-status__label' }, 'Scout'),
-        el('div', { class: 'splash2-status__activity', id: 'splash2-activity' }, 'Building your knowledge base'),
-      ]),
-    ]),
+    // Scout's logo only — sized like a presenter mark, animates with the
+    // same loader pattern as the conversation's thinking indicator.
+    el('div', {
+      class: 'splash2-mark msg__avatar--scout msg__avatar--loading',
+      id: 'splash2-scout-avatar',
+    }, [scoutAvatar]),
 
-    // Drawer card — same visual language as the conversation's brand-drawer.
-    el('div', { class: 'splash2-drawer-card', id: 'splash2-drawer-card' }),
-  ]);
-}
-
-// Panels mirror the conversation's brand-drawer language: large title,
-// uppercase eyebrows, no card chrome. Each section reveals sequentially as
-// Scout "writes" the knowledge base.
-function buildSplash2BrandPanel() {
-  return el('div', { class: 'kb-drawer-panel kb-drawer-panel--brand' }, [
-    el('div', { class: 'kb-drawer-panel__head' }, [
-      el('h3', { class: 'kb-drawer-panel__title' }, 'About your brand'),
-      el('p',  { class: 'kb-drawer-panel__sub' }, 'How Scout sees you, refreshed live.'),
-    ]),
-
-    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'identity' }, [
-      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Identity'),
-      el('div', { class: 'kb-drawer-panel__lede' }, 'Tkxel'),
-      el('div', { class: 'kb-drawer-panel__meta' }, 'Heritage fashion · Karachi'),
-    ]),
-
-    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'audience' }, [
-      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Audience'),
-      el('div', { class: 'kb-drawer-panel__row' }, [
-        el('div', { class: 'kb-drawer-panel__avatars' }, [
-          el('span', { class: 'kb-drawer-panel__avatar', style: '--c: #fbcfe8;' }),
-          el('span', { class: 'kb-drawer-panel__avatar', style: '--c: #c7d2fe;' }),
-          el('span', { class: 'kb-drawer-panel__avatar', style: '--c: #bbf7d0;' }),
-        ]),
-        el('div', { class: 'kb-drawer-panel__lede kb-drawer-panel__lede--md' }, 'Women 22–34'),
-      ]),
-      el('div', { class: 'kb-drawer-panel__meta' }, 'Pakistan & diaspora · culturally curious, mobile-first'),
-    ]),
-
-    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'themes' }, [
-      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Themes'),
-      el('div', { class: 'kb-drawer-panel__pills' }, [
-        el('span', { class: 'kb-drawer-panel__pill' }, 'Heritage'),
-        el('span', { class: 'kb-drawer-panel__pill' }, 'Sustainability'),
-        el('span', { class: 'kb-drawer-panel__pill' }, 'Local artisanship'),
-      ]),
-    ]),
-
-    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'tone' }, [
-      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Tone'),
-      el('div', { class: 'kb-drawer-panel__lede kb-drawer-panel__lede--md' }, 'Warm, story-led'),
-      el('div', { class: 'kb-drawer-panel__meta' }, 'Personal, postcode over aesthetic, names the artisan.'),
+    // Two knowledge blocks, stacked. Same widget the user sees in-app.
+    el('div', { class: 'splash2-kb-stack' }, [
+      el('div', { class: 'kb-block splash2-kb splash2-kb--brand',    id: 'splash2-kb-brand' }),
+      el('div', { class: 'kb-block splash2-kb splash2-kb--trending', id: 'splash2-kb-trending' }),
     ]),
   ]);
 }
 
-function buildSplash2TrendingPanel() {
-  return el('div', { class: 'kb-drawer-panel kb-drawer-panel--trending' }, [
-    el('div', { class: 'kb-drawer-panel__head' }, [
-      el('h3', { class: 'kb-drawer-panel__title' }, "What's working"),
-      el('p',  { class: 'kb-drawer-panel__sub' }, 'Live signal Scout is tracking for you.'),
-    ]),
+// Splash 2 KB facts — same shape as the in-conversation knowledge block.
+// Each block has a title, summary, and a list of {label, value} facts.
+const SPLASH2_BRAND_FACTS = [
+  { label: 'IDENTITY',  value: 'Tkxel · Heritage fashion, Karachi' },
+  { label: 'AUDIENCE',  value: 'Women 22–34 · Pakistan & diaspora' },
+  { label: 'THEMES',    value: 'Heritage · Sustainability · Local craft' },
+  { label: 'TONE',      value: 'Warm, story-led · names the artisan' },
+];
+const SPLASH2_TRENDING_FACTS = [
+  { label: 'TOP TOPIC',  value: 'Heritage origin stories · +92% engagement' },
+  { label: 'TOP TREND',  value: '#SouthAsianHeritageWeek · +4.2× w/w' },
+  { label: 'PEAK WINDOW', value: 'Weekdays 2–4pm PKT' },
+  { label: 'BEST FORMAT', value: 'Image + caption with attribution' },
+];
 
-    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'topic' }, [
-      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Top topic'),
-      el('div', { class: 'kb-drawer-panel__lede' }, 'Heritage origin stories'),
-      el('div', { class: 'kb-drawer-panel__bar' }, [
-        el('div', { class: 'kb-drawer-panel__bar-track' }, [
-          el('div', { class: 'kb-drawer-panel__bar-fill', style: 'width: 92%;' }),
-        ]),
-        el('div', { class: 'kb-drawer-panel__bar-pct' }, '+92%'),
-      ]),
-    ]),
+// Render a KB block in the splash. Phases:
+//   'empty'   → dimmed, title + placeholder
+//   'active'  → building dots, title + summary preview
+//   'filled'  → static, summary preview only
+//   'expanded'→ full fact list rendered
+function renderSplash2Kb(node, kind, phase, facts, opts = {}) {
+  if (!node) return;
+  const meta = kind === 'brand'
+    ? { title: 'Brand',    empty: 'Identity, products, niche, voice' }
+    : { title: 'Trending', empty: "What's working in your niche right now" };
 
-    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'trend' }, [
-      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Top trend'),
-      el('div', { class: 'kb-drawer-panel__lede' }, [
-        el('span', { class: 'kb-drawer-panel__hash' }, '#'),
-        document.createTextNode('SouthAsianHeritageWeek'),
-      ]),
-      el('div', { class: 'kb-drawer-panel__meta' }, '+4.2× week-on-week · spiking now'),
-    ]),
+  node.className = 'kb-block splash2-kb splash2-kb--' + kind;
+  if (phase === 'empty')    node.classList.add('kb-block--empty');
+  if (phase === 'active')   node.classList.add('kb-block--active');
+  if (phase === 'filled')   node.classList.add('kb-block--filled');
+  if (phase === 'expanded') node.classList.add('kb-block--expanded');
 
-    el('section', { class: 'kb-drawer-panel__section', 'data-section': 'peak' }, [
-      el('div', { class: 'kb-drawer-panel__eyebrow' }, 'Peak window'),
-      el('div', { class: 'kb-drawer-panel__lede kb-drawer-panel__lede--md' }, 'Weekdays 2–4pm PKT'),
-      el('div', { class: 'kb-drawer-panel__peak' }, [
-        el('div', { class: 'kb-drawer-panel__peak-track' }, [
-          el('div', { class: 'kb-drawer-panel__peak-highlight' }),
-        ]),
-        el('div', { class: 'kb-drawer-panel__peak-labels' }, [
-          el('span', {}, '12a'), el('span', {}, '6a'), el('span', {}, '12p'), el('span', {}, '6p'), el('span', {}, '12a'),
-        ]),
-      ]),
-    ]),
+  node.innerHTML = '';
+
+  // Head
+  const head = el('div', { class: 'kb-block__head' }, [
+    el('div', { class: 'kb-block__title' }, meta.title),
   ]);
+  node.appendChild(head);
+
+  // Summary (one-line preview when not expanded)
+  if (phase !== 'expanded') {
+    const summary = phase === 'empty'
+      ? meta.empty
+      : facts.slice(0, 3).map(f => f.label[0] + f.label.slice(1).toLowerCase()).join(' · ');
+    node.appendChild(el('div', { class: 'kb-block__summary' }, summary));
+  }
+
+  // Building indicator on the active phase
+  if (phase === 'active') {
+    node.appendChild(el('div', { class: 'kb-block__status', 'aria-live': 'polite' }, [
+      document.createTextNode(opts.activityText || 'Building'),
+      el('span', { class: 'kb-block__status-dot' }, '.'),
+      el('span', { class: 'kb-block__status-dot' }, '.'),
+      el('span', { class: 'kb-block__status-dot' }, '.'),
+    ]));
+  }
+
+  // Body (only when expanded) — facts list, reveals are handled by caller.
+  if (phase === 'expanded') {
+    const body = el('div', { class: 'kb-block__body' });
+    facts.forEach((f, i) => {
+      const factEl = el('div', { class: 'kb-block__fact splash2-fact', 'data-fact-i': String(i) }, [
+        el('span', { class: 'kb-block__fact-label' }, f.label),
+        el('span', { class: 'kb-block__fact-value' }, f.value),
+      ]);
+      body.appendChild(factEl);
+    });
+    node.appendChild(body);
+  }
 }
 
 /* ---- Screen 3: Outcomes ----
-   A 3×3 grid of post skeleton cards. The MIDDLE tile is a stat card that
-   shows a positive engagement metric with a small line graph trending up. */
+   A 3×3 post grid that fills the right section. The middle tile is a white
+   engagement stat card with an upward-trending sparkline. */
 function buildSplashScreen3Right() {
   const POSTS = [
     { ext: 'jpeg', caption: "Heritage isn't an aesthetic. It's a postcode." },
     { ext: 'png',  caption: 'Where the embroidery actually comes from.' },
     { ext: 'png',  caption: "Spent the morning at Bibi's workshop." },
     { ext: 'png',  caption: 'New drop. Same hands, same story.' },
-    // Middle tile → replaced by a stat card.
-    null,
+    null, // middle: stat tile
     { ext: 'png',  caption: 'Three reasons your audience saves your posts.' },
     { ext: 'png',  caption: "Mid-century roots, modern silhouettes." },
     { ext: 'png',  caption: 'Workshop notes from Sindh.' },
@@ -3189,7 +3169,7 @@ function buildSplashScreen3Right() {
 
   const tiles = POSTS.map((p, i) => {
     if (p === null) return buildSplash3StatTile();
-    const imgIdx = i < 4 ? i + 1 : i; // skip the middle slot's image index
+    const imgIdx = i < 4 ? i + 1 : i;
     const src = `/Posts/${imgIdx}.${p.ext}`;
     return el('div', { class: 'splash3-tile' }, [buildPostSkeleton(src, p.caption)]);
   });
@@ -3199,10 +3179,9 @@ function buildSplashScreen3Right() {
   ]);
 }
 
-// The middle stat tile — value, label, and a small line graph trending up.
+// White engagement stat card — clean surface, upward sparkline. Reads like
+// a dashboard widget pulled out of the product.
 function buildSplash3StatTile() {
-  // Sparkline path: ascending, with a small dip then strong climb.
-  // viewBox 0 0 100 40; data points reflect a positive trend.
   const linePath  = 'M2,32 L14,28 L26,30 L38,22 L50,24 L62,16 L74,14 L86,8 L98,4';
   const fillPath  = 'M2,32 L14,28 L26,30 L38,22 L50,24 L62,16 L74,14 L86,8 L98,4 L98,40 L2,40 Z';
   return el('div', { class: 'splash3-tile splash3-tile--stat' }, [
@@ -3212,13 +3191,13 @@ function buildSplash3StatTile() {
         document.createTextNode('Engagement · 30d'),
       ]),
       el('div', { class: 'splash3-stat__value', id: 'splash3-stat-value' }, '↑ 3.8×'),
-      el('div', { class: 'splash3-stat__label' }, 'vs your previous baseline'),
+      el('div', { class: 'splash3-stat__label' }, 'vs. your previous baseline'),
       el('div', { class: 'splash3-stat__chart' }, [
         parseSvg(
           '<svg viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="splash3-stat__svg" aria-hidden="true">' +
             '<defs>' +
               '<linearGradient id="splash3-grad" x1="0" y1="0" x2="0" y2="1">' +
-                '<stop offset="0%"  stop-color="#a78bfa" stop-opacity="0.35"/>' +
+                '<stop offset="0%"  stop-color="#a78bfa" stop-opacity="0.28"/>' +
                 '<stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>' +
               '</linearGradient>' +
             '</defs>' +
@@ -3304,21 +3283,11 @@ function playSplashWheelHearts(root) {
 // The whole loop repeats while the screen is mounted.
 async function playSplashScreen2Sequence(root) {
   const scoutAvatar = root.querySelector('#splash2-scout-avatar');
-  const drawerCard  = root.querySelector('#splash2-drawer-card');
-  const activityEl  = root.querySelector('#splash2-activity');
-  if (!scoutAvatar || !drawerCard) return;
+  const brandKb     = root.querySelector('#splash2-kb-brand');
+  const trendingKb  = root.querySelector('#splash2-kb-trending');
+  if (!scoutAvatar || !brandKb || !trendingKb) return;
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  const activityText = {
-    brand:    'Building your brand knowledge',
-    trending: "Tracking what's working in your niche",
-  };
-
-  const mountPanel = (kind) => {
-    drawerCard.innerHTML = '';
-    drawerCard.appendChild(kind === 'brand' ? buildSplash2BrandPanel() : buildSplash2TrendingPanel());
-    if (activityEl) activityEl.textContent = activityText[kind];
-  };
+  const beat = (ms) => sleep(reduced ? 0 : ms);
 
   const setScoutThinking = () => {
     scoutAvatar.classList.add('msg__avatar--loading');
@@ -3337,31 +3306,28 @@ async function playSplashScreen2Sequence(root) {
     scoutAvatar.innerHTML = '<svg><use href="#i-logo"/></svg>';
   };
 
-  const revealPanel = async () => {
+  // Fill one block: empty → active (building) → expanded (facts stream in).
+  const fillBlock = async (node, kind, facts, activityText) => {
+    renderSplash2Kb(node, kind, 'active', facts, { activityText });
     setScoutThinking();
-    drawerCard.classList.add('splash2-drawer-card--in');
-    await sleep(reduced ? 0 : 480);
+    await beat(900);
+    renderSplash2Kb(node, kind, 'expanded', facts);
+    // Reveal facts one at a time.
+    const factEls = node.querySelectorAll('.splash2-fact');
+    factEls.forEach(f => f.classList.add('splash2-fact--pre'));
+    await beat(60);
+    for (const f of factEls) {
+      f.classList.remove('splash2-fact--pre');
+      f.classList.add('splash2-fact--in');
+      await beat(220);
+    }
     setScoutSettled();
-    // Reveal sections sequentially — feels like Scout writing them in.
-    drawerCard.querySelector('.kb-drawer-panel__head')?.classList.add('kb-drawer-panel__section--in');
-    await sleep(reduced ? 0 : 240);
-    const sections = drawerCard.querySelectorAll('.kb-drawer-panel__section');
-    for (const s of sections) {
-      s.classList.add('kb-drawer-panel__section--in');
-      await sleep(reduced ? 0 : 260);
-    }
-    const topicFill = drawerCard.querySelector('.kb-drawer-panel__bar-fill');
-    if (topicFill) {
-      const target = topicFill.style.width;
-      topicFill.style.width = '0%';
-      requestAnimationFrame(() => { topicFill.style.width = target || '92%'; });
-    }
-    await sleep(reduced ? 0 : 1700);
+    await beat(900);
   };
-  const hidePanel = async () => {
-    drawerCard.classList.remove('splash2-drawer-card--in');
-    await sleep(reduced ? 0 : 380);
-    drawerCard.innerHTML = '';
+
+  const reset = () => {
+    renderSplash2Kb(brandKb,    'brand',    'empty', SPLASH2_BRAND_FACTS);
+    renderSplash2Kb(trendingKb, 'trending', 'empty', SPLASH2_TRENDING_FACTS);
   };
 
   // Loop while mounted.
@@ -3372,17 +3338,21 @@ async function playSplashScreen2Sequence(root) {
   observer.observe(document.body, { childList: true, subtree: true });
 
   while (!stopped && root.isConnected) {
-    mountPanel('brand');
-    await revealPanel();
-    await hidePanel();
-    if (stopped || !root.isConnected) break;
-    await sleep(reduced ? 0 : 400);
+    reset();
+    await beat(400);
 
-    mountPanel('trending');
-    await revealPanel();
-    await hidePanel();
+    // Fill Brand block first — stays expanded so facts remain visible.
+    await fillBlock(brandKb, 'brand', SPLASH2_BRAND_FACTS, 'Learning your brand');
     if (stopped || !root.isConnected) break;
-    await sleep(reduced ? 0 : 600);
+    await beat(400);
+
+    // Fill Trending block — also stays expanded.
+    await fillBlock(trendingKb, 'trending', SPLASH2_TRENDING_FACTS, 'Tracking your niche');
+    if (stopped || !root.isConnected) break;
+
+    // Both knowledge blocks now display the full fact list. Hold for a beat
+    // so the user can read the result before the loop restarts.
+    await beat(3200);
   }
 }
 
