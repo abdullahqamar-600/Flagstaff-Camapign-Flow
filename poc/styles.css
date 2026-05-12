@@ -505,10 +505,9 @@ a { color: var(--text-link); text-decoration: none; }
 .proc-line__icon {
   position: relative;
   display: inline-grid; place-items: center;
-  width: 32px; height: 32px;
+  width: 20px; height: 20px;
   flex-shrink: 0;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  background: transparent;
   color: #7c3aed;
   overflow: visible;
 }
@@ -522,30 +521,18 @@ a { color: var(--text-link); text-decoration: none; }
   position: absolute; inset: 0;
   display: grid; place-items: center;
   opacity: 0;
-  transform: scale(0.7) rotate(-12deg);
-  transition: opacity 280ms var(--ease-emphasized), transform 280ms var(--ease-emphasized);
+  transform: scale(0.85);
+  transition: opacity 480ms var(--ease-standard), transform 480ms var(--ease-standard);
 }
 .proc-line__icon-frame--in {
   opacity: 1;
-  transform: scale(1) rotate(0deg);
+  transform: scale(1);
 }
 .proc-line__icon-frame--out {
   opacity: 0;
-  transform: scale(0.7) rotate(12deg);
+  transform: scale(0.85);
 }
-.proc-line__icon-pulse {
-  position: absolute; inset: -4px;
-  border-radius: 14px;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.35), transparent 65%);
-  opacity: 0;
-  animation: procIconPulse 1.8s ease-in-out infinite;
-  pointer-events: none;
-  z-index: -1;
-}
-@keyframes procIconPulse {
-  0%, 100% { opacity: 0; transform: scale(0.85); }
-  50%      { opacity: 0.6; transform: scale(1.15); }
-}
+.proc-line__icon-pulse { display: none; }
 .proc-line__text { flex: 1; }
 .proc-line__text-slot {
   flex: 1;
@@ -558,8 +545,8 @@ a { color: var(--text-link); text-decoration: none; }
 .proc-line__text-line {
   display: block;
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 280ms var(--ease-emphasized), transform 280ms var(--ease-emphasized);
+  transform: translateY(4px);
+  transition: opacity 560ms var(--ease-standard), transform 560ms var(--ease-standard);
 }
 .proc-line__text-line--in {
   opacity: 1;
@@ -568,7 +555,7 @@ a { color: var(--text-link); text-decoration: none; }
 .proc-line__text-line--out {
   position: absolute; left: 0; right: 0; top: 0;
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translateY(-4px);
 }
 @keyframes procPointerIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -2081,20 +2068,28 @@ body.mode-onboarding .topbar__right { display: none; }
   width: 100%;
 }
 
-/* Width caps — cards align to the chat column (720px). */
-.qreplies, .chips        { max-width: 720px; padding-left: 0; }
-.actions-card            { max-width: 720px; }
-.verbal-area             { max-width: 720px; }
-.upload-area             { max-width: 720px; }
-.proc-line               { max-width: 720px; }
-.conf                    { max-width: 720px; }
-.pl-tree                 { max-width: 720px; }
-.preview                 { max-width: 720px; }
-.connect                 { max-width: 720px; }
-.score                   { max-width: 720px; }
-.build                   { max-width: 720px; }
-.success-post            { max-width: 720px; }
-.activation              { max-width: 720px; }
+/* Width caps — every widget runs end-to-end inside the 720px chat column.
+   Margin-left resets here override the per-widget defaults so widgets sit
+   flush with the column edges. Only the suggested-post cards
+   (.directions-list) deliberately overflow this width. */
+.qreplies, .chips        { max-width: 720px; padding-left: 0; margin-left: 0; }
+.actions-card            { max-width: 720px; margin-left: 0; }
+.verbal-area             { max-width: 720px; margin-left: 0; }
+.upload-area             { max-width: 720px; margin-left: 0; }
+.proc-line               { max-width: 720px; margin-left: 0; }
+.conf                    { max-width: 720px; margin-left: 0; }
+.pl-tree                 { max-width: 720px; margin-left: 0; }
+.preview                 { max-width: 720px; margin-left: 0; }
+.connect                 { max-width: 720px; margin-left: 0; }
+.score                   { max-width: 720px; margin-left: 0; }
+.build                   { max-width: 720px; margin-left: 0; }
+.success-post            { max-width: 720px; margin-left: 0; }
+.activation              { max-width: 720px; margin-left: 0; }
+.tone-list               { max-width: 720px; margin-left: 0; }
+.kpi-card                { max-width: 720px; margin-left: 0; }
+.x-header                { max-width: 720px; margin-left: 0; }
+.x-stats                 { max-width: 720px; margin-left: 0; }
+.first-post-banner       { margin-left: 0; }
 
 /* Composer pill mark uses the new logo too — when shown anywhere it represents Scout. */
 .scout-mark {
@@ -3807,14 +3802,19 @@ body.mode-hero .conv__stream {
    Chips-group binds helper + chips + Done into one surface so the helper
    reads as part of the question rather than floating in space.
    ========================================================================= */
+/* Chip-group is a transparent wrapper — no card chrome, no background.
+   The chips themselves carry the visual weight; the wrapper just stacks
+   helper + chips + done in a single column. */
 .chips-group {
-  margin-left: 40px;
-  max-width: 540px;
-  padding: 16px 20px 16px;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 20px;
+  margin-left: 0;
+  width: 100%;
+  max-width: 720px;
+  align-self: flex-start;
+  padding: 0;
+  background: transparent;
+  border: 0;
   display: flex; flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   animation: cardIn var(--duration-slow) var(--ease-emphasized) both;
 }
 .chips-group .chips {
@@ -3829,9 +3829,9 @@ body.mode-hero .conv__stream {
   padding-left: 0;
   font-size: 12px;
   color: var(--text-tertiary);
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   margin-bottom: 0;
 }
 .chip--capped { opacity: 0.45; cursor: not-allowed; }
@@ -5581,48 +5581,59 @@ body.mode-hero .conv__stream {
 .splash2-mark.msg__avatar--loading .scout-loader__c--3 { animation-delay: 700ms; }
 .splash2-mark.msg__avatar--loading .scout-loader__c--4 { animation-delay: 1050ms; }
 
-/* Stack of knowledge blocks — same widget the user sees inside the chat,
-   scaled up so the contents read at presentation distance. */
+/* Stacked-card layout — both knowledge blocks share the same anchor; one
+   sits in front, the other peeks from behind. Animation swaps which one
+   is on top. */
 .splash2-kb-stack {
   position: relative;
   z-index: 2;
   flex: 1;
-  display: flex; flex-direction: column;
-  gap: 18px;
   min-height: 0;
+  display: block;
 }
 .splash2-kb {
-  padding: 20px 22px;
-  border-radius: 18px;
+  position: absolute;
+  left: 0; right: 0;
+  width: 100%;
+  padding: 24px 28px;
+  border-radius: 22px;
   font-size: 14px;
+  background: #fff;
+  border: 1px solid var(--border-subtle);
   transition:
-    background-color 360ms var(--ease-standard),
-    opacity 360ms var(--ease-standard),
-    border-color 360ms var(--ease-standard),
-    box-shadow 360ms var(--ease-standard);
+    top 520ms var(--ease-emphasized),
+    transform 520ms var(--ease-emphasized),
+    opacity 520ms var(--ease-emphasized),
+    box-shadow 520ms var(--ease-emphasized),
+    background-color 360ms var(--ease-standard);
 }
-.splash2-kb.kb-block--empty {
-  background: rgba(255, 255, 255, 0.6);
-  opacity: 0.5;
-}
-.splash2-kb.kb-block--active {
-  background: #fff;
+/* Front card — primary, raised, fully opaque. */
+.splash2-kb.splash2-kb--front {
+  top: 36px;
+  bottom: 0;
+  z-index: 2;
   opacity: 1;
-  border-color: var(--border-subtle);
-  box-shadow: 0 12px 32px rgba(79, 70, 229, 0.10);
+  transform: scale(1);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
 }
-.splash2-kb.kb-block--filled {
-  background: #fff;
-  opacity: 1;
-  border-color: var(--border-subtle);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+/* Back card — peeks behind, slightly smaller, dimmer. */
+.splash2-kb.splash2-kb--back {
+  top: 0;
+  bottom: 24px;
+  z-index: 1;
+  opacity: 0.65;
+  transform: scale(0.96);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
 }
-.splash2-kb.kb-block--expanded {
-  background: #fff;
-  opacity: 1;
-  border-color: var(--border-subtle);
-  box-shadow: 0 12px 32px rgba(79, 70, 229, 0.10);
+.splash2-kb.splash2-kb--back .kb-block__body,
+.splash2-kb.splash2-kb--back .kb-block__status {
+  display: none;
 }
+.splash2-kb.kb-block--empty.splash2-kb--front  { background: #fff; }
+.splash2-kb.kb-block--active.splash2-kb--front { background: #fff; }
+.splash2-kb.kb-block--filled.splash2-kb--front { background: #fff; }
+.splash2-kb.kb-block--expanded.splash2-kb--front { background: #fff; }
 .splash2-kb .kb-block__title {
   font-size: 16px;
   font-weight: 700;
@@ -5782,25 +5793,42 @@ body.mode-hero .conv__stream {
 }
 
 /* =========================================================================
-   SPLASH 3 — The 3×3 post grid fills the whole right section. The middle
-   tile is a WHITE engagement stat card with an upward-trending sparkline.
+   SPLASH 3 — A 3×3 post grid fills the right section. The middle tile is a
+   WHITE engagement stat card with an upward-trending sparkline. A subtle
+   white gradient hugs the outer edges of the section so cards near the
+   border read as receding — soft depth, no hard frame.
    ========================================================================= */
 .splash3-block {
   background: #fff;
   padding: 0;
+  position: relative;
   display: flex;
   align-items: stretch;
   justify-content: stretch;
+  overflow: hidden;
+}
+.splash3-block::before {
+  /* Inner white-gradient halo on the section's edges — gives the centre
+     a sense of focus and softens the outer ring of tiles. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    radial-gradient(120% 110% at 50% 50%, transparent 55%, rgba(255,255,255,0.65) 88%, #fff 100%);
 }
 .splash3-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   gap: 14px;
-  padding: 18px;
+  padding: 0;
   width: 100%;
   height: 100%;
   min-height: 0;
+  position: relative;
+  z-index: 1;
 }
 .splash3-tile {
   position: relative;
@@ -5891,31 +5919,31 @@ body.mode-hero .conv__stream {
   display: flex;
   overflow: hidden;
   background: #fff;
-  /* Centre the wheel mask vertically within the block. */
   align-items: center;
   justify-content: center;
 }
 .splash-wheel-mask {
-  /* Bigger tiles, tighter radius — posts feel substantial and close together. */
-  --wheel-radius: 420px;
-  --tile-w: 220px;
-  --tile-h: 280px;
+  /* A circle of post cards centred in the section. Pivot is at the centre,
+     so tiles orbit around the middle. Radius matches a comfortable orbit
+     that leaves room for larger tile size. */
+  --wheel-radius: 300px;
+  --tile-w: 260px;
+  --tile-h: 330px;
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  /* Softer mask edges so cards fade out gracefully near the container edge
-     rather than being clipped abruptly. */
-  mask-image: radial-gradient(140% 120% at 50% 100%, #000 50%, transparent 95%);
-  -webkit-mask-image: radial-gradient(140% 120% at 50% 100%, #000 50%, transparent 95%);
+  /* Soft circular vignette so cards fade gently at the corners. */
+  mask-image: radial-gradient(115% 105% at 50% 50%, #000 65%, transparent 95%);
+  -webkit-mask-image: radial-gradient(115% 105% at 50% 50%, #000 65%, transparent 95%);
 }
 .splash-wheel {
   position: absolute;
-  /* Pivot below the visible area — wheel arc rises through the centre. */
-  left: 50%; top: calc(100% + 80px);
+  /* Pivot at the centre — tiles orbit around the centre of the section. */
+  left: 50%; top: 50%;
   width: 0; height: 0;
-  animation: wheelSpin 80s linear infinite;
+  animation: wheelSpin 100s linear infinite;
 }
 @keyframes wheelSpin {
   from { transform: rotate(0); }
@@ -6002,7 +6030,7 @@ body.mode-hero .conv__stream {
 .post-skeleton__bar--line       { width: 100%; height: 4px; }
 .post-skeleton__bar--line-short { width: 60%; }
 .post-skeleton__caption {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.35;
   color: var(--text-primary);
   font-weight: 500;
@@ -6010,6 +6038,11 @@ body.mode-hero .conv__stream {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.splash3-tile .post-skeleton {
+  padding: 12px;
+  border-radius: 16px;
+  gap: 10px;
 }
 .post-skeleton__media {
   border-radius: 8px;

@@ -3071,10 +3071,11 @@ function buildSplashScreen2Right() {
       id: 'splash2-scout-avatar',
     }, [scoutAvatar]),
 
-    // Two knowledge blocks, stacked. Same widget the user sees in-app.
+    // Stacked-card composition: the active block sits on top; the next
+    // block peeks from behind. Animation swaps which one is on top.
     el('div', { class: 'splash2-kb-stack' }, [
-      el('div', { class: 'kb-block splash2-kb splash2-kb--brand',    id: 'splash2-kb-brand' }),
       el('div', { class: 'kb-block splash2-kb splash2-kb--trending', id: 'splash2-kb-trending' }),
+      el('div', { class: 'kb-block splash2-kb splash2-kb--brand',    id: 'splash2-kb-brand' }),
     ]),
   ]);
 }
@@ -3285,7 +3286,8 @@ async function playSplashScreen2Sequence(root) {
   const scoutAvatar = root.querySelector('#splash2-scout-avatar');
   const brandKb     = root.querySelector('#splash2-kb-brand');
   const trendingKb  = root.querySelector('#splash2-kb-trending');
-  if (!scoutAvatar || !brandKb || !trendingKb) return;
+  const stack       = root.querySelector('.splash2-kb-stack');
+  if (!scoutAvatar || !brandKb || !trendingKb || !stack) return;
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const beat = (ms) => sleep(reduced ? 0 : ms);
 
@@ -3306,13 +3308,22 @@ async function playSplashScreen2Sequence(root) {
     scoutAvatar.innerHTML = '<svg><use href="#i-logo"/></svg>';
   };
 
-  // Fill one block: empty → active (building) → expanded (facts stream in).
-  const fillBlock = async (node, kind, facts, activityText) => {
+  // Bring one block to the front; the other tucks behind.
+  const bringToFront = (front, back) => {
+    front.classList.add('splash2-kb--front');
+    front.classList.remove('splash2-kb--back');
+    back.classList.add('splash2-kb--back');
+    back.classList.remove('splash2-kb--front');
+  };
+
+  // Fill the FRONT block: empty (peek) → active (building) → expanded.
+  const fillFrontBlock = async (node, kind, facts, activityText) => {
     renderSplash2Kb(node, kind, 'active', facts, { activityText });
+    node.classList.add('splash2-kb--front');
     setScoutThinking();
     await beat(900);
     renderSplash2Kb(node, kind, 'expanded', facts);
-    // Reveal facts one at a time.
+    node.classList.add('splash2-kb--front');
     const factEls = node.querySelectorAll('.splash2-fact');
     factEls.forEach(f => f.classList.add('splash2-fact--pre'));
     await beat(60);
@@ -3325,7 +3336,7 @@ async function playSplashScreen2Sequence(root) {
     await beat(900);
   };
 
-  const reset = () => {
+  const resetEmpty = () => {
     renderSplash2Kb(brandKb,    'brand',    'empty', SPLASH2_BRAND_FACTS);
     renderSplash2Kb(trendingKb, 'trending', 'empty', SPLASH2_TRENDING_FACTS);
   };
@@ -3338,21 +3349,25 @@ async function playSplashScreen2Sequence(root) {
   observer.observe(document.body, { childList: true, subtree: true });
 
   while (!stopped && root.isConnected) {
-    reset();
+    // Start: both empty. Brand is in front.
+    resetEmpty();
+    bringToFront(brandKb, trendingKb);
     await beat(400);
 
-    // Fill Brand block first — stays expanded so facts remain visible.
-    await fillBlock(brandKb, 'brand', SPLASH2_BRAND_FACTS, 'Learning your brand');
+    // Fill Brand on top.
+    await fillFrontBlock(brandKb, 'brand', SPLASH2_BRAND_FACTS, 'Learning your brand');
     if (stopped || !root.isConnected) break;
-    await beat(400);
+    // Swap: Brand tucks behind, Trending rises to front.
+    await beat(800);
+    bringToFront(trendingKb, brandKb);
+    await beat(600);
 
-    // Fill Trending block — also stays expanded.
-    await fillBlock(trendingKb, 'trending', SPLASH2_TRENDING_FACTS, 'Tracking your niche');
+    // Fill Trending on top.
+    await fillFrontBlock(trendingKb, 'trending', SPLASH2_TRENDING_FACTS, 'Tracking your niche');
     if (stopped || !root.isConnected) break;
 
-    // Both knowledge blocks now display the full fact list. Hold for a beat
-    // so the user can read the result before the loop restarts.
-    await beat(3200);
+    // Hold the finished state for a beat before restarting.
+    await beat(2800);
   }
 }
 
