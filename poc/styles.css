@@ -6060,12 +6060,13 @@ body.mode-hero .conv__stream {
   justify-content: center;
 }
 .splash-wheel-mask {
-  /* A static half-circle of post cards. The wheel pivots below the section
-     so only the upper arc is visible; nothing rotates — tiles read as a
-     fanned, upright spread of work. */
-  --wheel-radius: 420px;
-  --tile-w: 308px;   /* +10% from 280 */
-  --tile-h: 385px;   /* +10% from 350 */
+  /* A half-circle of post cards. The wheel pivots below the section so
+     only the upper arc is visible; the wheel rotates slowly while each
+     tile counter-rotates so it stays upright. */
+  --wheel-radius: 560px;   /* larger orbit — more cards visible at once */
+  --tile-w: 308px;
+  --tile-h: 385px;
+  --wheel-duration: 120s;  /* very slow rotation, reads as ambient drift */
   position: absolute;
   inset: 0;
   width: 100%;
@@ -6074,11 +6075,14 @@ body.mode-hero .conv__stream {
 }
 .splash-wheel {
   position: absolute;
-  /* Pivot raised slightly above the section's bottom so the visible arc
-     has more headroom and feels balanced against the whitespace up top. */
   left: 50%; top: 88%;
   width: 0; height: 0;
   transform-origin: center;
+  animation: wheelSpin var(--wheel-duration) linear infinite;
+}
+@keyframes wheelSpin {
+  from { transform: rotate(0); }
+  to   { transform: rotate(360deg); }
 }
 .splash-wheel__tile {
   position: absolute;
@@ -6086,15 +6090,24 @@ body.mode-hero .conv__stream {
   top: calc(var(--wheel-radius) * -1 - var(--tile-h) / 2);
   width: var(--tile-w);
   height: var(--tile-h);
-  /* Each tile sits at a fixed angle on the orbit. No animation. */
+  /* Each tile sits at a fixed angle on the orbit; it rides with the
+     parent wheel as it rotates. */
   transform: rotate(var(--angle, 0deg));
   transform-origin: center calc(50% + var(--wheel-radius));
 }
 .splash-wheel__tile-inner {
   width: 100%; height: 100%;
-  /* Cancel the parent rotation once (no animation), so the tile sits
-     upright at its position on the arc. */
+  /* Counter-rotate at the same speed/direction as the wheel so each
+     tile stays upright while it orbits. */
   transform: rotate(var(--init-r, 0deg));
+  animation: wheelTileCounter var(--wheel-duration) linear infinite;
+}
+@keyframes wheelTileCounter {
+  from { transform: rotate(var(--init-r, 0deg)); }
+  to   { transform: rotate(calc(var(--init-r, 0deg) - 360deg)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-wheel, .splash-wheel__tile-inner { animation: none; }
 }
 
 /* Heart-flow overlay: hearts spawn at random x positions along the visible
