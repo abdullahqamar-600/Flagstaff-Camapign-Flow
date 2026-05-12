@@ -5496,11 +5496,13 @@ body.mode-hero .conv__stream {
    shadow when it's the live decision point; once chosen/finalized, it
    goes flat. Containers add `.awaiting` while pending, drop it on commit.
    ========================================================================= */
+/* Awaiting-input pending shadow. Tone-list is a bare 3-card grid (no
+   container), so it does not participate — the shadow would render as a
+   ghost box around invisible content. */
 .conf,
 .pl-tree,
 .profile-score,
 .chips-group,
-.tone-list,
 .directions-list,
 .trend-group-list,
 .iteration-list {
@@ -5511,12 +5513,11 @@ body.mode-hero .conv__stream {
 .pl-tree.is-settled,
 .profile-score.is-settled,
 .chips-group.is-settled,
-.tone-list--chosen,
 .directions-list--chosen,
-.tone-list.is-settled,
 .iteration-list--chosen {
   box-shadow: none;
 }
+.tone-list { box-shadow: none; }
 
 /* =========================================================================
    SPLASH eyebrow — small uppercase label with a pulsing accent dot.
