@@ -3016,15 +3016,15 @@ function buildSplashScreen1Right() {
   // post caption + image so the wheel reads as a feed of work, not just
   // skeleton placeholders. Hearts drift up occasionally from random posts.
   const POSTS = [
-    { ext: 'jpeg', caption: "Heritage isn't an aesthetic. It's a postcode." },
-    { ext: 'png',  caption: 'Where the embroidery actually comes from.' },
-    { ext: 'png',  caption: "Spent the morning at Bibi's workshop." },
-    { ext: 'png',  caption: 'New drop. Same hands, same story.' },
-    { ext: 'png',  caption: "What we got wrong in our first capsule." },
-    { ext: 'png',  caption: 'Three reasons your audience saves your posts.' },
-    { ext: 'png',  caption: "Mid-century roots, modern silhouettes." },
-    { ext: 'png',  caption: 'Workshop notes from Sindh.' },
-    { ext: 'jpeg', caption: 'The hands behind the label.' },
+    { ext: 'jpeg', caption: "Feeling indecisive? Pick the everything bagel." },
+    { ext: 'png',  caption: 'You deserve a treat. Iced oat lattes are back.' },
+    { ext: 'png',  caption: 'Coucou. The lemon macaron is back this week.' },
+    { ext: 'png',  caption: "If your design doesn't tell a story, who will listen?" },
+    { ext: 'png',  caption: 'Warm breakfast is one bite away.' },
+    { ext: 'png',  caption: 'Baith jaao. The chair we all grew up around.' },
+    { ext: 'png',  caption: 'New Molts. Classic malt, roasted hops.' },
+    { ext: 'png',  caption: 'Trail logged. Inbox can wait.' },
+    { ext: 'jpeg', caption: "Warning: so good you can't see straight." },
   ];
   const N = POSTS.length;
   const tiles = POSTS.map((p, i) => {
@@ -3264,16 +3264,18 @@ function renderSplash2Drawer(node, kind) {
    A 3×3 post grid that fills the right section. The middle tile is a white
    engagement stat card with an upward-trending sparkline. */
 function buildSplashScreen3Right() {
+  // Tiles map to /Posts/1..4 then /Posts/5..8 (the middle slot is the stat
+  // tile). Captions match each image's actual hero copy.
   const POSTS = [
-    { ext: 'jpeg', caption: "Heritage isn't an aesthetic. It's a postcode." },
-    { ext: 'png',  caption: 'Where the embroidery actually comes from.' },
-    { ext: 'png',  caption: "Spent the morning at Bibi's workshop." },
-    { ext: 'png',  caption: 'New drop. Same hands, same story.' },
+    { ext: 'jpeg', caption: "Feeling indecisive? Pick the everything bagel." },
+    { ext: 'png',  caption: 'You deserve a treat. Iced oat lattes are back.' },
+    { ext: 'png',  caption: 'Coucou. The lemon macaron is back this week.' },
+    { ext: 'png',  caption: "If your design doesn't tell a story, who will listen?" },
     null, // middle: stat tile
-    { ext: 'png',  caption: 'Three reasons your audience saves your posts.' },
-    { ext: 'png',  caption: "Mid-century roots, modern silhouettes." },
-    { ext: 'png',  caption: 'Workshop notes from Sindh.' },
-    { ext: 'jpeg', caption: 'The hands behind the label.' },
+    { ext: 'png',  caption: 'Warm breakfast is one bite away.' },
+    { ext: 'png',  caption: 'Baith jaao. The chair we all grew up around.' },
+    { ext: 'png',  caption: 'New Molts. Classic malt, roasted hops.' },
+    { ext: 'png',  caption: 'Trail logged. Inbox can wait.' },
   ];
 
   const tiles = POSTS.map((p, i) => {
