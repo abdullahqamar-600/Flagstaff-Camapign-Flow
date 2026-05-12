@@ -748,26 +748,34 @@ async function narratedProcess(_label, lines, { lineBeat = 1400, exitBeat = 360,
   const normalize = (l) => (typeof l === 'string' ? { icon: 'i-sparkle', text: l } : l);
   const iconGlyph = iconHolder.querySelector('.proc-line__icon-glyph');
 
+  // Force a layout/paint so the browser sees the "pre" (opacity 0)
+  // state before we add the `--in` class. Without this, the transition
+  // is skipped because the element has never been painted in its
+  // initial state.
+  const flushIntoView = (node) => {
+    // eslint-disable-next-line no-unused-expressions
+    node.offsetHeight;
+  };
+
   const swapIcon = async (iconId, isFirst) => {
     const next = el('span', { class: 'proc-line__icon-frame', html: icon(iconId) });
     if (isFirst) {
       iconGlyph.innerHTML = '';
       iconGlyph.appendChild(next);
-      // Let the next frame paint with the "pre" state, then add --in so the
-      // entry transition (opacity, scale, blur) plays from a clean start.
-      requestAnimationFrame(() => next.classList.add('proc-line__icon-frame--in'));
+      flushIntoView(next);
+      next.classList.add('proc-line__icon-frame--in');
       return;
     }
-    // Cross-fade in place: old frame fades out while new fades in. Both
-    // transitions run for the same duration so the swap reads as one
-    // smooth dissolve rather than two staggered steps.
+    // Old icon exits first (~260ms). New icon enters slightly delayed
+    // (CSS adds a 120ms entrance delay), keeping the swap clean.
     const old = iconGlyph.firstChild;
     iconGlyph.appendChild(next);
-    requestAnimationFrame(() => next.classList.add('proc-line__icon-frame--in'));
+    flushIntoView(next);
+    next.classList.add('proc-line__icon-frame--in');
     if (old) {
       old.classList.remove('proc-line__icon-frame--in');
       old.classList.add('proc-line__icon-frame--out');
-      setTimeout(() => old.remove(), 620);
+      setTimeout(() => old.remove(), 320);
     }
   };
 
@@ -776,16 +784,20 @@ async function narratedProcess(_label, lines, { lineBeat = 1400, exitBeat = 360,
     if (isFirst) {
       textHolder.innerHTML = '';
       textHolder.appendChild(nextText);
-      requestAnimationFrame(() => nextText.classList.add('proc-line__text-line--in'));
+      flushIntoView(nextText);
+      nextText.classList.add('proc-line__text-line--in');
       return;
     }
+    // Old line exits first (~280ms). New line enters delayed (CSS adds
+    // 120ms entrance delay) so the two don't sit on top of each other.
     const old = textHolder.firstChild;
     textHolder.appendChild(nextText);
-    requestAnimationFrame(() => nextText.classList.add('proc-line__text-line--in'));
+    flushIntoView(nextText);
+    nextText.classList.add('proc-line__text-line--in');
     if (old) {
       old.classList.remove('proc-line__text-line--in');
       old.classList.add('proc-line__text-line--out');
-      setTimeout(() => old.remove(), 720);
+      setTimeout(() => old.remove(), 320);
     }
   };
 
