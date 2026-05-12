@@ -54,18 +54,18 @@ const state = {
 /* Two demo identities, chosen by accountType in step 1 */
 const DEMO_BRAND = {
   // Identity
-  name: 'Tkxel',
+  name: 'rasa',
   niche: 'Fashion / Heritage',
   industry: 'Heritage Fashion',
   products: ['Sindhi-embroidered tops', 'Kashmiri shawls', 'Modern kurtas'],
   positioning: 'Modern Gen Z take on traditional Pakistani crafts',
   themes: ['Heritage', 'Sustainability', 'Local artisanship'],
   tone: 'Casual, witty, culture-forward',
-  websiteUrl: 'https://tkxel.com',
+  websiteUrl: 'https://rasa.studio',
   competitorsDefault: ['@generation.pk', '@khaadiofficial', '@sapphirepakistan'],
   // X profile metadata (mirrors what Twitter exposes)
-  handle: '@tkxel_official',
-  displayName: 'Tkxel',
+  handle: '@rasa',
+  displayName: 'rasa',
   bio: 'Heritage, restitched. Made by hand, worn with pride. Sindhi & Kashmiri craft for the next generation.',
   location: 'Karachi, Pakistan',
   verified: true,
@@ -136,7 +136,7 @@ const DEMO_BRAND = {
       { id: 'c', angle: 'Data-driven',    body: "We pulled the numbers on our last 30 posts. The ones that named the artisan and the region got 3.8× the saves of pure product shots. Audiences want context, not catalog. #SouthAsianHeritageWeek" },
     ],
     founder: [
-      { id: 'a', angle: 'Personal story', body: "Year one of running Tkxel: I underpaid myself, overpaid for marketing, and learned that the artisans we work with had been waiting twenty years for someone to put their names on the label. That last one is why we keep going." },
+      { id: 'a', angle: 'Personal story', body: "Year one of running rasa: I underpaid myself, overpaid for marketing, and learned that the artisans we work with had been waiting twenty years for someone to put their names on the label. That last one is why we keep going." },
       { id: 'b', angle: 'Hot take',       body: "Founder transparency on this app is mostly performance. Real transparency is boring. This is what the cost breakdown looks like, this is what we got wrong last quarter, this is what we're still figuring out." },
       { id: 'c', angle: 'Data-driven',    body: "Posts where we share an honest founder note get 2.6× more replies than launch posts. Replies turn into customers at 4× the rate of likes. The lesson: stop polishing, start talking." },
     ],
@@ -1429,9 +1429,9 @@ function renderDashboard() {
 
 function buildPostCTA(isBrand) {
   const samples = isBrand ? [
-    { handle: '@tkxel_official', body: "Heritage isn't an aesthetic. It's a postcode and a person who can name the stitch." },
-    { handle: '@tkxel_official', body: "Bibi taught us mirror work in Hyderabad. 31 years, hands faster than my notes." },
-    { handle: '@tkxel_official', body: "Workshop reels outperform studio reels 1.8× for us. Tells you what your audience wants." },
+    { handle: '@rasa', body: "Heritage isn't an aesthetic. It's a postcode and a person who can name the stitch." },
+    { handle: '@rasa', body: "Bibi taught us mirror work in Hyderabad. 31 years, hands faster than my notes." },
+    { handle: '@rasa', body: "Workshop reels outperform studio reels 1.8× for us. Tells you what your audience wants." },
   ] : [
     { handle: '@aqamar', body: "Most design-system posts skip the part that matters: adoption. Token tables are easy." },
     { handle: '@aqamar', body: "First time I shipped a system, optimized the wrong thing for six months. Lesson logged." },
@@ -1588,7 +1588,7 @@ async function step1_opening() {
 async function step3_product_lines_brand_only() {
   if (state.accountType !== 'brand') return;
   await scoutMsg(
-    "One important question. Does Tkxel have distinct product lines that should speak to different audiences? " +
+    "One important question. Does rasa have distinct product lines that should speak to different audiences? " +
     "An embroidery line for special occasions might need a different voice than an everyday line.",
     { typingFor: 1100, beat: 400 }
   );
@@ -2561,13 +2561,21 @@ async function step_post_directions() {
 
 // Mock image generation — uses real post imagery for the demo. Each
 // direction maps to a different post visual; the loading shimmer plays
-// briefly so the card reads as "Scout just generated this."
+// briefly so the card reads as "Scout just generated this." The image
+// set differs by accountType (brand vs individual).
 function directionImage(d, i) {
-  const visuals = [
-    { src: '/PostA.jpeg', tint: 'linear-gradient(135deg, #fde68a 0%, #f59e0b 60%, #b45309 100%)' },
-    { src: '/PostB.jpeg', tint: 'linear-gradient(135deg, #c7d2fe 0%, #818cf8 60%, #4f46e5 100%)' },
-    { src: '/PostC.jpeg', tint: 'linear-gradient(135deg, #bbf7d0 0%, #34d399 60%, #047857 100%)' },
-  ];
+  const isBrand = state.accountType === 'brand';
+  const visuals = isBrand
+    ? [
+        { src: '/PostA.jpeg', tint: 'linear-gradient(135deg, #fde68a 0%, #f59e0b 60%, #b45309 100%)' },
+        { src: '/PostB.jpeg', tint: 'linear-gradient(135deg, #c7d2fe 0%, #818cf8 60%, #4f46e5 100%)' },
+        { src: '/PostC.jpeg', tint: 'linear-gradient(135deg, #bbf7d0 0%, #34d399 60%, #047857 100%)' },
+      ]
+    : [
+        { src: '/IndividualPostA.jpeg', tint: 'linear-gradient(135deg, #fde68a 0%, #f59e0b 60%, #b45309 100%)' },
+        { src: '/IndividualPostB.jpeg', tint: 'linear-gradient(135deg, #c7d2fe 0%, #818cf8 60%, #4f46e5 100%)' },
+        { src: '/IndividualPostC.jpeg', tint: 'linear-gradient(135deg, #bbf7d0 0%, #34d399 60%, #047857 100%)' },
+      ];
   const v = visuals[i % visuals.length];
   const wrap = el('div', {
     class: 'direction-card__image direction-card__image--loading',
@@ -3113,7 +3121,7 @@ function splash2BrandSections() {
     {
       eyebrow: 'Identity',
       build: () => el('div', {}, [
-        el('div', { class: 'brand-drawer__name' }, 'Tkxel'),
+        el('div', { class: 'brand-drawer__name' }, 'rasa'),
         el('div', { class: 'brand-drawer__sub-line' }, 'Heritage Fashion · Karachi, Pakistan'),
         el('p', { class: 'brand-drawer__positioning' }, 'Modern Gen Z take on traditional Pakistani crafts.'),
       ]),
