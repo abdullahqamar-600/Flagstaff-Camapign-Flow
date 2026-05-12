@@ -730,7 +730,7 @@ function heroBlock(acct, _iconId, label, desc) {
 // takes its place. Each accepts {icon, text} (or a bare string with a default
 // icon). The text is rendered in a soft indigo shade so it reads as ambient
 // status rather than chat content.
-async function narratedProcess(_label, lines, { lineBeat = 1100, exitBeat = 280, _finalBeat = 0 } = {}) {
+async function narratedProcess(_label, lines, { lineBeat = 1400, exitBeat = 360, _finalBeat = 0 } = {}) {
   // The icon plate stays anchored in place — only its inner SVG cross-fades
   // and rotates softly between activities. The text uses its existing
   // up/in & up/out pattern so each phrase reads as a fresh thought.
@@ -749,35 +749,43 @@ async function narratedProcess(_label, lines, { lineBeat = 1100, exitBeat = 280,
   const iconGlyph = iconHolder.querySelector('.proc-line__icon-glyph');
 
   const swapIcon = async (iconId, isFirst) => {
-    const next = el('span', { class: 'proc-line__icon-frame proc-line__icon-frame--in', html: icon(iconId) });
+    const next = el('span', { class: 'proc-line__icon-frame', html: icon(iconId) });
     if (isFirst) {
       iconGlyph.innerHTML = '';
       iconGlyph.appendChild(next);
+      // Let the next frame paint with the "pre" state, then add --in so the
+      // entry transition (opacity, scale, blur) plays from a clean start.
+      requestAnimationFrame(() => next.classList.add('proc-line__icon-frame--in'));
       return;
     }
-    // Cross-fade in place: old frame fades out while new fades in.
+    // Cross-fade in place: old frame fades out while new fades in. Both
+    // transitions run for the same duration so the swap reads as one
+    // smooth dissolve rather than two staggered steps.
     const old = iconGlyph.firstChild;
     iconGlyph.appendChild(next);
+    requestAnimationFrame(() => next.classList.add('proc-line__icon-frame--in'));
     if (old) {
       old.classList.remove('proc-line__icon-frame--in');
       old.classList.add('proc-line__icon-frame--out');
-      setTimeout(() => old.remove(), 320);
+      setTimeout(() => old.remove(), 620);
     }
   };
 
   const swapText = async (text, isFirst) => {
-    const nextText = el('span', { class: 'proc-line__text-line proc-line__text-line--in' }, text);
+    const nextText = el('span', { class: 'proc-line__text-line' }, text);
     if (isFirst) {
       textHolder.innerHTML = '';
       textHolder.appendChild(nextText);
+      requestAnimationFrame(() => nextText.classList.add('proc-line__text-line--in'));
       return;
     }
     const old = textHolder.firstChild;
     textHolder.appendChild(nextText);
+    requestAnimationFrame(() => nextText.classList.add('proc-line__text-line--in'));
     if (old) {
       old.classList.remove('proc-line__text-line--in');
       old.classList.add('proc-line__text-line--out');
-      setTimeout(() => old.remove(), 320);
+      setTimeout(() => old.remove(), 720);
     }
   };
 
@@ -3074,47 +3082,148 @@ function buildSplashScreen2Right() {
   ]);
 }
 
-// Splash 2 drawer content — alternates between Brand and Trending. Same
-// language as the in-conversation brand-drawer: title, sub, then a list of
-// labelled sections.
-const SPLASH2_BRAND_CONTENT = {
-  title: 'About your brand',
-  sub:   "How Scout sees you, refreshed every time you sit down to post.",
-  sections: [
-    { label: 'IDENTITY',  value: 'Tkxel · Heritage fashion, Karachi' },
-    { label: 'AUDIENCE',  value: 'Women 22–34 · Pakistan & diaspora' },
-    { label: 'THEMES',    value: 'Heritage · Sustainability · Local craft' },
-    { label: 'TONE',      value: 'Warm, story-led · names the artisan' },
-  ],
-};
-const SPLASH2_TRENDING_CONTENT = {
-  title: "What's working",
-  sub:   "Live signal Scout is tracking in your niche right now.",
-  sections: [
-    { label: 'TOP TOPIC',   value: 'Heritage origin stories · +92% engagement' },
-    { label: 'TOP TREND',   value: '#SouthAsianHeritageWeek · +4.2× w/w' },
-    { label: 'PEAK WINDOW', value: 'Weekdays 2–4pm PKT' },
-    { label: 'BEST FORMAT', value: 'Image + caption with attribution' },
-  ],
-};
+// Splash 2 drawer content — exact same shape as the in-conversation
+// brand-drawer. Each section is a {eyebrow, build()} pair so we can reveal
+// them sequentially. Brand and Trending are two variants of the same panel.
+function splash2BrandSections() {
+  return [
+    {
+      eyebrow: 'Identity',
+      build: () => el('div', {}, [
+        el('div', { class: 'brand-drawer__name' }, 'Tkxel'),
+        el('div', { class: 'brand-drawer__sub-line' }, 'Heritage Fashion · Karachi, Pakistan'),
+        el('p', { class: 'brand-drawer__positioning' }, 'Modern Gen Z take on traditional Pakistani crafts.'),
+      ]),
+    },
+    {
+      eyebrow: 'Themes',
+      build: () => el('div', { class: 'brand-drawer__pills' }, [
+        el('span', { class: 'brand-drawer__pill' }, 'Heritage'),
+        el('span', { class: 'brand-drawer__pill' }, 'Sustainability'),
+        el('span', { class: 'brand-drawer__pill' }, 'Local artisanship'),
+      ]),
+    },
+    {
+      eyebrow: 'Top performing topics',
+      build: () => el('div', { class: 'brand-drawer__topic-bars' }, [
+        topicBarEl('Heritage origin stories', 92),
+        topicBarEl('Behind-the-scenes artisan', 67),
+        topicBarEl('Styling guides', 45),
+      ]),
+    },
+    {
+      eyebrow: 'Audience',
+      build: () => el('div', {}, [
+        el('div', { class: 'brand-drawer__audience-row' }, [
+          el('div', { class: 'brand-drawer__avatar-cluster' }, [
+            el('span', { class: 'brand-drawer__avatar' }),
+            el('span', { class: 'brand-drawer__avatar' }),
+            el('span', { class: 'brand-drawer__avatar' }),
+          ]),
+          el('p', { class: 'brand-drawer__audience' }, 'Women 22–34 in Pakistan, the UAE, and the Pakistani diaspora, culturally curious, mobile-first, value heritage with a modern eye.'),
+        ]),
+        el('div', { class: 'brand-drawer__secondary' }, 'Mothers and gift buyers · 35–50'),
+      ]),
+    },
+    {
+      eyebrow: 'Peak activity',
+      build: () => el('div', {}, [
+        el('div', { class: 'brand-drawer__peak-strip' }, [
+          el('div', { class: 'brand-drawer__peak-track' }, [
+            el('div', { class: 'brand-drawer__peak-highlight' }),
+          ]),
+          el('div', { class: 'brand-drawer__peak-labels' }, [
+            el('span', {}, '12a'), el('span', {}, '6a'), el('span', {}, '12p'), el('span', {}, '6p'), el('span', {}, '12a'),
+          ]),
+        ]),
+        el('div', { class: 'brand-drawer__peak-text' }, 'Weekdays 2–4pm PKT'),
+      ]),
+    },
+  ];
+}
 
-// Render the splash 2 drawer with title, sub, and the section list. Each
-// section is independently fade-in-able so JS can reveal them in sequence.
-function renderSplash2Drawer(node, content) {
+function splash2TrendingSections() {
+  return [
+    {
+      eyebrow: 'Top topic',
+      build: () => el('div', {}, [
+        el('div', { class: 'brand-drawer__name' }, 'Heritage origin stories'),
+        el('div', { class: 'brand-drawer__sub-line' }, '+92% engagement vs. niche average'),
+      ]),
+    },
+    {
+      eyebrow: 'Top trend',
+      build: () => el('div', {}, [
+        el('div', { class: 'brand-drawer__name' }, '#SouthAsianHeritageWeek'),
+        el('div', { class: 'brand-drawer__sub-line' }, '+4.2× week-on-week · spiking now'),
+      ]),
+    },
+    {
+      eyebrow: 'What audiences save',
+      build: () => el('div', { class: 'brand-drawer__topic-bars' }, [
+        topicBarEl('Founder transparency', 88),
+        topicBarEl('Workshop reels', 73),
+        topicBarEl('Process breakdowns', 54),
+      ]),
+    },
+    {
+      eyebrow: 'Best format',
+      build: () => el('div', { class: 'brand-drawer__pills' }, [
+        el('span', { class: 'brand-drawer__pill' }, 'Image + caption'),
+        el('span', { class: 'brand-drawer__pill' }, 'Names the artisan'),
+        el('span', { class: 'brand-drawer__pill' }, '< 240 chars'),
+      ]),
+    },
+    {
+      eyebrow: 'Peak window',
+      build: () => el('div', {}, [
+        el('div', { class: 'brand-drawer__peak-strip' }, [
+          el('div', { class: 'brand-drawer__peak-track' }, [
+            el('div', { class: 'brand-drawer__peak-highlight' }),
+          ]),
+          el('div', { class: 'brand-drawer__peak-labels' }, [
+            el('span', {}, '12a'), el('span', {}, '6a'), el('span', {}, '12p'), el('span', {}, '6p'), el('span', {}, '12a'),
+          ]),
+        ]),
+        el('div', { class: 'brand-drawer__peak-text' }, 'Weekdays 2–4pm PKT'),
+      ]),
+    },
+  ];
+}
+
+function topicBarEl(name, pct) {
+  return el('div', { class: 'brand-drawer__topic-bar' }, [
+    el('div', { class: 'brand-drawer__topic-row' }, [
+      el('span', { class: 'brand-drawer__topic-name' }, name),
+      el('span', { class: 'brand-drawer__topic-pct' }, `+${pct}%`),
+    ]),
+    el('div', { class: 'brand-drawer__topic-track' }, [
+      el('div', { class: 'brand-drawer__topic-fill', style: `width: ${Math.min(100, pct)}%;` }),
+    ]),
+  ]);
+}
+
+// Render the splash 2 drawer using the same vocabulary as the in-conversation
+// brand-drawer. Title, sub, and then a list of sections — each with an
+// uppercase eyebrow and a body built by `sec.build()`.
+function renderSplash2Drawer(node, kind) {
   if (!node) return;
   node.innerHTML = '';
+
+  const isBrand = kind === 'brand';
+  const title = isBrand ? 'About your brand' : "What's working";
+  const sub = 'Scout is filling this as she learns.';
+  const sections = isBrand ? splash2BrandSections() : splash2TrendingSections();
+
   node.appendChild(el('div', { class: 'splash2-drawer__head' }, [
-    el('h3', { class: 'splash2-drawer__title' }, content.title),
-    el('p',  { class: 'splash2-drawer__sub' }, content.sub),
+    el('h2', { class: 'splash2-drawer__title' }, title),
+    el('p',  { class: 'splash2-drawer__sub' }, sub),
   ]));
   const body = el('div', { class: 'splash2-drawer__body' });
-  content.sections.forEach((s, i) => {
-    body.appendChild(el('div', {
-      class: 'splash2-drawer__section splash2-section--pre',
-      'data-section-i': String(i),
-    }, [
-      el('div', { class: 'splash2-drawer__eyebrow' }, s.label),
-      el('div', { class: 'splash2-drawer__value' },   s.value),
+  sections.forEach((sec) => {
+    body.appendChild(el('section', { class: 'brand-drawer__section splash2-section--pre' }, [
+      el('div', { class: 'brand-drawer__eyebrow' }, sec.eyebrow),
+      sec.build(),
     ]));
   });
   node.appendChild(body);
@@ -3274,21 +3383,28 @@ async function playSplashScreen2Sequence(root) {
     scoutAvatar.innerHTML = '<svg><use href="#i-logo"/></svg>';
   };
 
-  const fillDrawer = async (content) => {
+  const fillDrawer = async (kind) => {
     setScoutThinking();
-    renderSplash2Drawer(drawer, content);
+    renderSplash2Drawer(drawer, kind);
     // Reveal title/sub, then each section sequentially.
-    await beat(200);
+    await beat(180);
     drawer.querySelector('.splash2-drawer__head')?.classList.add('splash2-section--in');
     await beat(260);
-    const sections = drawer.querySelectorAll('.splash2-drawer__section');
+    const sections = drawer.querySelectorAll('.brand-drawer__section');
     for (const s of sections) {
       s.classList.remove('splash2-section--pre');
       s.classList.add('splash2-section--in');
       await beat(280);
     }
+    // Replay the top-topic bar fills so they animate from 0.
+    const bars = drawer.querySelectorAll('.brand-drawer__topic-fill');
+    bars.forEach((b) => {
+      const w = b.style.width;
+      b.style.width = '0%';
+      requestAnimationFrame(() => { b.style.width = w; });
+    });
     setScoutSettled();
-    await beat(1600);
+    await beat(2200);
   };
 
   const fadeOutDrawer = async () => {
@@ -3305,12 +3421,12 @@ async function playSplashScreen2Sequence(root) {
   observer.observe(document.body, { childList: true, subtree: true });
 
   while (!stopped && root.isConnected) {
-    await fillDrawer(SPLASH2_BRAND_CONTENT);
+    await fillDrawer('brand');
     if (stopped || !root.isConnected) break;
     await fadeOutDrawer();
     await beat(300);
 
-    await fillDrawer(SPLASH2_TRENDING_CONTENT);
+    await fillDrawer('trending');
     if (stopped || !root.isConnected) break;
     await fadeOutDrawer();
     await beat(300);

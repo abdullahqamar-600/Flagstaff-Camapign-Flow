@@ -492,20 +492,23 @@ a { color: var(--text-link); text-decoration: none; }
   /* No background, no border, no padding. Sits inline with the chat. */
 }
 .proc-line__pointer {
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 12px;
   font-size: var(--text-sm);
   line-height: 1.5;
-  color: #7c3aed; /* brighter purple — Scout is actively working */
-  animation: procPointerIn 320ms cubic-bezier(0.2, 0, 0, 1) both;
+  color: #7c3aed;
+  animation: procPointerIn 520ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 .proc-line__pointer--persistent { animation: none; }
 .proc-line__pointer--exit {
-  animation: procPointerOut 280ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: procPointerOut 400ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
+
+/* Icon plate — no background. Glyph cross-fades smoothly between activities;
+   a soft halo behind it breathes so the line feels alive without flashing. */
 .proc-line__icon {
   position: relative;
   display: inline-grid; place-items: center;
-  width: 20px; height: 20px;
+  width: 22px; height: 22px;
   flex-shrink: 0;
   background: transparent;
   color: #7c3aed;
@@ -521,18 +524,39 @@ a { color: var(--text-link); text-decoration: none; }
   position: absolute; inset: 0;
   display: grid; place-items: center;
   opacity: 0;
-  transform: scale(0.85);
-  transition: opacity 480ms var(--ease-standard), transform 480ms var(--ease-standard);
+  transform: scale(0.92);
+  transition:
+    opacity 600ms cubic-bezier(0.2, 0, 0, 1),
+    transform 600ms cubic-bezier(0.2, 0, 0, 1),
+    filter 600ms cubic-bezier(0.2, 0, 0, 1);
+  filter: blur(2px);
 }
 .proc-line__icon-frame--in {
   opacity: 1;
   transform: scale(1);
+  filter: blur(0);
 }
 .proc-line__icon-frame--out {
   opacity: 0;
-  transform: scale(0.85);
+  transform: scale(0.92);
+  filter: blur(2px);
 }
-.proc-line__icon-pulse { display: none; }
+/* Soft breathing halo behind the icon so the line reads as ambient
+   activity instead of a static line. */
+.proc-line__icon-pulse {
+  display: block;
+  position: absolute; inset: -8px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.18), transparent 70%);
+  opacity: 0;
+  animation: procIconBreathe 2400ms ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+@keyframes procIconBreathe {
+  0%, 100% { opacity: 0;    transform: scale(0.85); }
+  50%      { opacity: 0.55; transform: scale(1.10); }
+}
 .proc-line__text { flex: 1; }
 .proc-line__text-slot {
   flex: 1;
@@ -545,17 +569,23 @@ a { color: var(--text-link); text-decoration: none; }
 .proc-line__text-line {
   display: block;
   opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 560ms var(--ease-standard), transform 560ms var(--ease-standard);
+  transform: translateY(6px);
+  transition:
+    opacity 700ms cubic-bezier(0.2, 0, 0, 1),
+    transform 700ms cubic-bezier(0.2, 0, 0, 1),
+    filter 700ms cubic-bezier(0.2, 0, 0, 1);
+  filter: blur(3px);
 }
 .proc-line__text-line--in {
   opacity: 1;
   transform: translateY(0);
+  filter: blur(0);
 }
 .proc-line__text-line--out {
   position: absolute; left: 0; right: 0; top: 0;
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-6px);
+  filter: blur(3px);
 }
 @keyframes procPointerIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -5605,16 +5635,20 @@ body.mode-hero .conv__stream {
 .splash2-mark.msg__avatar--loading .scout-loader__c--3 { animation-delay: 700ms; }
 .splash2-mark.msg__avatar--loading .scout-loader__c--4 { animation-delay: 1050ms; }
 
-/* Splash 2 drawer — same visual vocabulary as the in-conversation
-   brand-drawer. Lives flush against the right edge of the section so it
-   reads as a real drawer panel; the Scout mark sits at the top-left of
-   the section, the drawer fills the rest. */
+/* Splash 2 drawer — exact same visual language as the in-conversation
+   brand-drawer. It uses the .brand-drawer__* utility classes (eyebrows,
+   names, pills, topic bars, audience cluster, peak strip) so any change
+   to the in-app drawer is automatically reflected in the splash.
+   The Scout mark sits at the top-left of the section; the drawer fills
+   the rest with generous padding and scrolls if content overflows. */
 .splash2-drawer {
   position: relative;
   z-index: 2;
   flex: 1;
   min-height: 0;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
   border-radius: 22px;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
@@ -5629,13 +5663,13 @@ body.mode-hero .conv__stream {
   display: flex; flex-direction: column; gap: 6px;
   opacity: 0;
   transform: translateY(6px);
-  transition: opacity 320ms var(--ease-emphasized), transform 320ms var(--ease-emphasized);
+  transition: opacity 360ms var(--ease-emphasized), transform 360ms var(--ease-emphasized);
 }
 .splash2-drawer__title {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
@@ -5647,29 +5681,18 @@ body.mode-hero .conv__stream {
 }
 .splash2-drawer__body {
   display: flex; flex-direction: column;
-  gap: 18px;
+  gap: 22px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
-.splash2-drawer__section {
-  display: flex; flex-direction: column;
-  gap: 4px;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 360ms var(--ease-emphasized), transform 360ms var(--ease-emphasized);
-}
-.splash2-section--pre { opacity: 0; transform: translateY(8px); }
-.splash2-section--in  { opacity: 1; transform: translateY(0); }
-.splash2-drawer__eyebrow {
-  font-size: 11px;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: var(--text-tertiary);
-}
-.splash2-drawer__value {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.45;
+.splash2-drawer__body::-webkit-scrollbar { display: none; }
+/* Per-section reveal pattern: starts hidden, slides in from below. */
+.splash2-section--pre { opacity: 0; transform: translateY(10px); }
+.splash2-section--in  {
+  opacity: 1; transform: translateY(0);
+  transition: opacity 480ms var(--ease-emphasized), transform 480ms var(--ease-emphasized);
 }
 .splash2-kb .kb-block__title {
   font-size: 16px;
@@ -5956,9 +5979,9 @@ body.mode-hero .conv__stream {
   /* The wheel pivots at the bottom of the section; only the upper half of
      the arc is visible — a half-circle of posts rises through the middle.
      Tiles stay upright (no individual rotation). */
-  --wheel-radius: 460px;
-  --tile-w: 240px;
-  --tile-h: 300px;
+  --wheel-radius: 380px;
+  --tile-w: 280px;
+  --tile-h: 350px;
   position: absolute;
   inset: 0;
   width: 100%;
