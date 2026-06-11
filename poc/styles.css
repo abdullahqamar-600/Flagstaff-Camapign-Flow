@@ -2795,6 +2795,84 @@ body.mode-hero .conv__stream {
   opacity: 1;
   border-color: var(--border-subtle);
   box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ------- Active KB block "bloom" — moving gradient at bottom 1/3 -------
+   Three light-purple blobs drift across the lower third of the block.
+   A blurred veil sits above them, smoothing their motion into a soft
+   gradient wash. Reads as ambient "Scout is building this." */
+.kb-block__bloom {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 33%;
+  pointer-events: none;
+  overflow: hidden;
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+  z-index: 0;
+}
+.kb-block__bloom-blob {
+  position: absolute;
+  border-radius: 999px;
+  /* Light purple, low saturation. The three blobs vary in size and
+     drift on offset cycles so the gradient never settles. */
+  background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.85), rgba(167, 139, 250, 0) 70%);
+  filter: blur(2px);
+  opacity: 0.65;
+}
+.kb-block__bloom-blob--a {
+  width: 70%; height: 220%;
+  left: -10%; bottom: -90%;
+  animation: kbBloomDriftA 5.6s ease-in-out infinite;
+  background: radial-gradient(circle at 50% 50%, rgba(196, 181, 253, 0.95), rgba(196, 181, 253, 0) 70%);
+}
+.kb-block__bloom-blob--b {
+  width: 50%; height: 180%;
+  left: 30%; bottom: -70%;
+  animation: kbBloomDriftB 7.2s ease-in-out infinite;
+  background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.80), rgba(167, 139, 250, 0) 70%);
+  animation-delay: -1.8s;
+}
+.kb-block__bloom-blob--c {
+  width: 40%; height: 150%;
+  left: 55%; bottom: -60%;
+  animation: kbBloomDriftC 8.4s ease-in-out infinite;
+  background: radial-gradient(circle at 50% 50%, rgba(216, 180, 254, 0.85), rgba(216, 180, 254, 0) 70%);
+  animation-delay: -3.4s;
+}
+@keyframes kbBloomDriftA {
+  0%, 100% { transform: translate(0, 0)        scale(1); }
+  50%      { transform: translate(18%, -8%)    scale(1.10); }
+}
+@keyframes kbBloomDriftB {
+  0%, 100% { transform: translate(0, 0)        scale(1); }
+  50%      { transform: translate(-22%, -12%)  scale(1.15); }
+}
+@keyframes kbBloomDriftC {
+  0%, 100% { transform: translate(0, 0)        scale(1); }
+  50%      { transform: translate(14%, -6%)    scale(0.92); }
+}
+/* The veil sits ABOVE the blobs and blurs them into a soft wash. The
+   gradient overlay also fades the top edge of the bloom into the block,
+   so there's no hard seam where the bottom third begins. */
+.kb-block__bloom-veil {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.30) 40%,
+    rgba(255, 255, 255, 0.10) 100%);
+}
+.kb-block__status {
+  position: relative;
+  z-index: 1; /* sit above the bloom */
+}
+@media (prefers-reduced-motion: reduce) {
+  .kb-block__bloom-blob { animation: none; }
 }
 
 /* Per-block expanded — the only "expanded" mode. Grows in place to show
@@ -3914,11 +3992,51 @@ body.mode-hero .conv__stream {
   padding: 12px 18px;
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-emphasized);
+}
+.chips-group .chip:hover {
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.10);
 }
 .chips-group .chip[aria-pressed="true"] {
   background: var(--primary-soft);
   color: var(--primary);
-  box-shadow: 0 0 0 1px var(--primary);
+  box-shadow: 0 0 0 1.5px var(--primary), 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+.chips-group .chip[aria-pressed="true"]:hover {
+  background: var(--primary-soft);
+  box-shadow: 0 0 0 1.5px var(--primary), 0 2px 6px rgba(79, 70, 229, 0.12);
+}
+.chips-group .chip:active { transform: scale(0.97); }
+/* The "Add your own" trigger reads as a dashed outline pill so it doesn't
+   look like a selectable answer. Becomes filled briefly while opening
+   the prompt; capped when the user has hit max selections. */
+.chips-group .chip--custom {
+  background: transparent;
+  color: var(--text-secondary);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  border-style: dashed;
+}
+.chips-group .chip--custom:hover {
+  color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+  background: transparent;
+}
+/* After Done: chosen chips preserve their pressed visual so the
+   conversation reads as "these were picked." (Without this, the
+   chosen state inherits border:0 from .chips-group .chip and looks
+   identical to an unselected pill.) */
+.chips-group .chip--chosen,
+.chips-group .chip--chosen[disabled] {
+  background: var(--primary-soft);
+  color: var(--primary);
+  box-shadow: 0 0 0 1.5px var(--primary), 0 1px 2px rgba(15, 23, 42, 0.06);
+  cursor: default;
+  opacity: 1;
 }
 .chip--capped { opacity: 0.45; cursor: not-allowed; }
 .chip--shake { animation: chipShake 320ms ease; }
@@ -4563,6 +4681,57 @@ body.mode-hero .conv__stream {
   0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 32%, transparent); }
   100% { box-shadow: 0 0 0 16px color-mix(in oklab, var(--primary) 0%, transparent); }
 }
+/* Foot inner: Not quite (ghost) + Accept (primary). */
+.brand-drawer__foot-actions {
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.brand-drawer__not-quite {
+  padding: 10px 16px;
+}
+/* Prompt mode — input field replaces the buttons in the same foot row. */
+.brand-drawer__prompt {
+  display: flex; align-items: center; gap: 10px;
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 6px 6px 6px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.brand-drawer__prompt:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 14%, transparent);
+}
+.brand-drawer__prompt-input {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: transparent;
+  font: inherit; font-size: 15px;
+  color: var(--text-primary);
+  padding: 8px 0;
+}
+.brand-drawer__prompt-input::placeholder { color: var(--text-tertiary); }
+.brand-drawer__prompt-submit {
+  width: 36px; height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  display: inline-grid; place-items: center;
+  flex-shrink: 0;
+}
+.brand-drawer__prompt-submit svg { width: 16px; height: 16px; }
+.brand-drawer__prompt-status {
+  display: inline-flex; align-items: center; gap: 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 10px 4px;
+}
+.brand-drawer__prompt-status-dot {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--primary);
+  animation: kbBloomDriftA 1.4s ease-in-out infinite;
+}
+/* While the user is typing feedback, suppress the CTA pulse and keep
+   the foot calm — no extra motion competing with the input. */
+.brand-drawer--prompting .brand-drawer__accept { animation: none; }
 
 /* Minimize → small re-open tab anchored to the right edge. */
 .brand-drawer-tab {

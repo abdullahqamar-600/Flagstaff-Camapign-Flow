@@ -477,68 +477,109 @@ function selectionChips(options, {
 } = {}) {
   return new Promise((resolve) => {
     const selected = new Set();
-    // Group chips + helper + Done into a single bordered surface so the
-    // "Pick up to N" label visually belongs to the chip set, not the air.
     const group = el('div', { class: 'chips-group' });
     const helperRow = maxSelections > 0
       ? el('div', { class: 'chips-helper' }, `Pick up to ${maxSelections}`)
       : null;
     if (helperRow) group.appendChild(helperRow);
     const wrap = el('div', { class: 'chips' });
-    const allOptions = [...options];
-    if (allowCustom) allOptions.push(customLabel);
 
-    const updateCapState = () => {
+    // Sync capped/disabled state on every selectable chip. The "Add your
+    // own" button is itself a chip but it's a *trigger*, not selectable —
+    // so we don't toggle aria-pressed on it.
+    const refreshState = () => {
       const atCap = maxSelections > 0 && selected.size >= maxSelections;
       Array.from(wrap.children).forEach((chip) => {
+        if (chip.classList.contains('chip--custom')) {
+          // The custom trigger goes capped when the user has filled all slots.
+          chip.classList.toggle('chip--capped', atCap);
+          return;
+        }
         const pressed = chip.getAttribute('aria-pressed') === 'true';
         chip.classList.toggle('chip--capped', atCap && !pressed);
       });
+      done.disabled = selected.size === 0;
     };
 
-    allOptions.forEach((opt) => {
-      const isCustom = allowCustom && opt === customLabel;
+    // Toggle a regular (non-custom) chip. Handles cap shake + selection
+    // accounting. Custom-added pills also use this handler so they can be
+    // deselected by clicking them again.
+    const toggleChip = (btn, value) => {
+      const on = btn.getAttribute('aria-pressed') === 'true';
+      if (!on && maxSelections > 0 && selected.size >= maxSelections) {
+        btn.classList.remove('chip--shake');
+        void btn.offsetWidth;
+        btn.classList.add('chip--shake');
+        return;
+      }
+      btn.setAttribute('aria-pressed', String(!on));
+      on ? selected.delete(value) : selected.add(value);
+      refreshState();
+    };
+
+    // Build the seed chips from the option list.
+    options.forEach((opt) => {
       const btn = el('button', {
-        class: 'chip' + (isCustom ? ' chip--custom' : ''),
+        class: 'chip',
+        type: 'button',
         'aria-pressed': 'false',
-        onclick: async () => {
-          if (isCustom) {
-            if (maxSelections > 0 && selected.size >= maxSelections) return;
-            const customText = await inlineTextInput({ placeholder: 'Type your custom goal…', submitLabel: 'Add' });
-            if (customText) {
-              selected.add(customText);
-              const tag = el('button', { class: 'chip', 'aria-pressed': 'true' }, customText);
-              wrap.insertBefore(tag, btn);
-              done.disabled = false;
-              updateCapState();
-            }
-            return;
-          }
-          const on = btn.getAttribute('aria-pressed') === 'true';
-          if (!on && maxSelections > 0 && selected.size >= maxSelections) {
-            // Brief shake feedback at the cap.
-            btn.classList.remove('chip--shake');
-            void btn.offsetWidth;
-            btn.classList.add('chip--shake');
-            return;
-          }
-          btn.setAttribute('aria-pressed', String(!on));
-          on ? selected.delete(opt) : selected.add(opt);
-          done.disabled = selected.size === 0;
-          updateCapState();
-        },
+        onclick: () => toggleChip(btn, opt),
       }, opt);
       wrap.appendChild(btn);
     });
 
+    // "Add your own" trigger — clicking opens an inline text input. The
+    // resulting pill is a regular chip with its own toggle handler, so
+    // the user can click it again to deselect.
+    let customTrigger = null;
+    if (allowCustom) {
+      customTrigger = el('button', {
+        class: 'chip chip--custom',
+        type: 'button',
+        onclick: async () => {
+          if (maxSelections > 0 && selected.size >= maxSelections) {
+            customTrigger.classList.remove('chip--shake');
+            void customTrigger.offsetWidth;
+            customTrigger.classList.add('chip--shake');
+            return;
+          }
+          const customText = await inlineTextInput({
+            placeholder: 'Type your own…',
+            submitLabel: 'Add',
+          });
+          if (!customText) return;
+          // De-dup against existing tags (case-insensitive).
+          const exists = Array.from(wrap.children).some(c =>
+            !c.classList.contains('chip--custom') &&
+            c.textContent.trim().toLowerCase() === customText.trim().toLowerCase()
+          );
+          if (exists) return;
+          selected.add(customText);
+          const tag = el('button', {
+            class: 'chip',
+            type: 'button',
+            'aria-pressed': 'true',
+            onclick: () => toggleChip(tag, customText),
+          }, customText);
+          wrap.insertBefore(tag, customTrigger);
+          refreshState();
+        },
+      }, customLabel);
+      wrap.appendChild(customTrigger);
+    }
+
     const done = el('button', {
       class: 'qreply qreply--primary chips__done',
+      type: 'button',
       disabled: 'true',
       onclick: () => {
         if (selected.size === 0) return;
         const list = Array.from(selected);
+        // Drop unselected chips + the custom trigger; freeze selected ones.
         Array.from(wrap.children).forEach((chip) => {
-          if (chip.getAttribute('aria-pressed') !== 'true') chip.remove();
+          const isPressed = chip.getAttribute('aria-pressed') === 'true';
+          const isCustomTrigger = chip.classList.contains('chip--custom');
+          if (isCustomTrigger || !isPressed) chip.remove();
         });
         Array.from(wrap.children).forEach((chip) => {
           chip.disabled = true;
@@ -1324,8 +1365,19 @@ function renderKB() {
 
     // Active-and-not-expanded: a quiet "Building…" status pinned to the
     // bottom-left. Three dots fade in turn — a typing-indicator rhythm,
-    // subtle, no flash.
+    // subtle, no flash. Behind the status, three light-purple blobs
+    // drift across the lower third of the block to indicate active
+    // generation; a backdrop-blur layer above them softens into a
+    // gradient wash.
     if (isActive && !isExpanded) {
+      blockChildren.push(
+        el('div', { class: 'kb-block__bloom', 'aria-hidden': 'true' }, [
+          el('span', { class: 'kb-block__bloom-blob kb-block__bloom-blob--a' }),
+          el('span', { class: 'kb-block__bloom-blob kb-block__bloom-blob--b' }),
+          el('span', { class: 'kb-block__bloom-blob kb-block__bloom-blob--c' }),
+          el('span', { class: 'kb-block__bloom-veil' }),
+        ])
+      );
       blockChildren.push(
         el('div', { class: 'kb-block__status', 'aria-live': 'polite' }, [
           document.createTextNode('Building'),
@@ -1929,17 +1981,25 @@ function openBrandDrawer() {
     ]),
     el('div', { class: 'brand-drawer__body' }),
     el('div', { class: 'brand-drawer__foot' }, [
-      el('button', {
-        class: 'btn-primary brand-drawer__accept',
-        onclick: () => {
-          if (drawerState.acceptResolver) {
-            const r = drawerState.acceptResolver;
-            drawerState.acceptResolver = null;
-            closeBrandDrawer();
-            r('accept');
-          }
-        },
-      }, 'Accept'),
+      el('div', { class: 'brand-drawer__foot-actions' }, [
+        el('button', {
+          class: 'btn-ghost brand-drawer__not-quite',
+          type: 'button',
+          onclick: () => enterNotQuiteMode(),
+        }, 'Not quite'),
+        el('button', {
+          class: 'btn-primary brand-drawer__accept',
+          type: 'button',
+          onclick: () => {
+            if (drawerState.acceptResolver) {
+              const r = drawerState.acceptResolver;
+              drawerState.acceptResolver = null;
+              closeBrandDrawer();
+              r('accept');
+            }
+          },
+        }, 'Accept'),
+      ]),
     ]),
   ]);
   // Re-open pill, shown while minimized.
@@ -2180,6 +2240,87 @@ async function writeDrawerSection(body, sec) {
 function revealBrandDrawerAccept() {
   if (!drawerState.node) return;
   drawerState.node.classList.add('brand-drawer--awaiting');
+  drawerState.node.classList.remove('brand-drawer--prompting');
+}
+
+// "Not quite" path: keep the drawer open and backdrop visible, swap the
+// foot's Accept/Not quite buttons for a single-line prompt input. The user
+// types feedback; on submit, Scout narrates a brief adjustment and the
+// Accept/Not quite buttons return so the user can re-confirm.
+function enterNotQuiteMode() {
+  if (!drawerState.node) return;
+  const foot = drawerState.node.querySelector('.brand-drawer__foot');
+  if (!foot) return;
+  // Mark state so other parts of the UI know we're in feedback mode.
+  drawerState.node.classList.add('brand-drawer--prompting');
+
+  // Replace foot contents with a prompt input.
+  foot.innerHTML = '';
+  const input = el('input', {
+    type: 'text',
+    class: 'brand-drawer__prompt-input',
+    placeholder: 'Tell Scout what to change…',
+    'aria-label': 'Tell Scout what to change',
+  });
+  const submit = el('button', {
+    class: 'btn-primary brand-drawer__prompt-submit',
+    type: 'button',
+    'aria-label': 'Send',
+    html: icon('i-arrow-right'),
+  });
+  const prompt = el('form', {
+    class: 'brand-drawer__prompt',
+    onsubmit: (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      handleNotQuiteSubmit(text);
+    },
+  }, [input, submit]);
+  foot.appendChild(prompt);
+  // Focus the input shortly after mount so the cursor is ready.
+  requestAnimationFrame(() => input.focus());
+}
+
+async function handleNotQuiteSubmit(promptText) {
+  if (!drawerState.node) return;
+  const foot = drawerState.node.querySelector('.brand-drawer__foot');
+  if (!foot) return;
+  // Trade the prompt input for a short "Adjusting…" status while Scout
+  // simulates a refresh.
+  foot.innerHTML = '';
+  foot.appendChild(
+    el('div', { class: 'brand-drawer__prompt-status', 'aria-live': 'polite' }, [
+      el('span', { class: 'brand-drawer__prompt-status-dot' }),
+      document.createTextNode('Adjusting based on your note…'),
+    ])
+  );
+  // Brief pause so the message reads.
+  await sleep(1400);
+  // Re-render the original Accept/Not quite foot row in place.
+  foot.innerHTML = '';
+  foot.appendChild(
+    el('div', { class: 'brand-drawer__foot-actions' }, [
+      el('button', {
+        class: 'btn-ghost brand-drawer__not-quite',
+        type: 'button',
+        onclick: () => enterNotQuiteMode(),
+      }, 'Not quite'),
+      el('button', {
+        class: 'btn-primary brand-drawer__accept',
+        type: 'button',
+        onclick: () => {
+          if (drawerState.acceptResolver) {
+            const r = drawerState.acceptResolver;
+            drawerState.acceptResolver = null;
+            closeBrandDrawer();
+            r('accept');
+          }
+        },
+      }, 'Accept'),
+    ])
+  );
+  drawerState.node.classList.remove('brand-drawer--prompting');
 }
 
 // Audience is inferred, not asked. Scout proposes a specific audience based on
@@ -2247,11 +2388,10 @@ async function step_tone_voice() {
   const directions = state.brand.toneDirections || [];
   if (!directions.length) return;
 
-  const reasoning = state.accountType === 'brand'
-    ? "Three voices that fit your brand. The first leans into the founder story your About page already tells. The second matches the directness rising in your niche right now. The third is the reverent register most heritage brands play in. Works, but more crowded."
-    : "Three voices that fit you. The first is the direct, useful register your essays already run on. The second is more confessional, specific stories about what you got wrong. The third is sharper, more contrarian. Works, but raises the stakes.";
-  await scoutMsg(reasoning, { typingFor: 1300, beat: 400 });
-  await scoutMsg("Pick the one that sounds like you.", { typingFor: 700, beat: 400 });
+  const lead = state.accountType === 'brand'
+    ? "Based on your brand and the trends I'm tracking, here are three tones that stood out — which one would you prefer?"
+    : "Based on you and the trends I'm tracking, here are three tones that stood out — which one would you prefer?";
+  await scoutMsg(lead, { typingFor: 1100, beat: 400 });
 
   await new Promise((resolve) => {
     const list = el('div', { class: 'tone-list' });
@@ -2814,7 +2954,6 @@ async function runConversation() {
   // Act 2 — Materials, then the first drawer review (Scout's read of the brand).
   await stepMaterials();                                      // website / docs / verbal
   await step_brand_review_first();                            // drawer opens → fills → accept → closes
-  await step_tone_voice();                                    // tone-direction card pick
 
   // Act 3 — Topics/products + goals.
   if (state.accountType === 'brand') await step3_product_lines_brand_only();
@@ -2825,6 +2964,11 @@ async function runConversation() {
   await step7_intel_scan();
   await step_audience_infer();                                // Scout proposes, user validates
   await step_brand_review_final();                            // drawer reopens with new sections → accept → closes
+
+  // Tone surfaces only AFTER the trending knowledge has been filled and the
+  // user has accepted it — so the voice picker reads as "given everything
+  // we now know, here are the directions that fit."
+  await step_tone_voice();                                    // tone-direction card pick
 
   // Act 5 — Merged directions → drafts → publish (or save for later).
   const iterChoice = await step_post_directions();
