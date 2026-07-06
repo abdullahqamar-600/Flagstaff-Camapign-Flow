@@ -33,7 +33,13 @@
   var currentFile = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
 
   // ---- 2. Sidebar wiring --------------------------------------------------
+  // Skip buttons that carry `data-nav` — those are self-managed by the page
+  // (e.g. create-campaign.html routes them back into ../poc/index.html).
+  // If we bound our own handler on top, both would fire and the last
+  // location.href assignment would win — landing users on the old
+  // designs/index.html dashboard instead of the POC one.
   Array.prototype.forEach.call(document.querySelectorAll('.sidebar__btn'), function (btn) {
+    if (btn.hasAttribute('data-nav')) return;
     var title = btn.getAttribute('title');
     var href = SIDEBAR_MAP[title];
     if (!href) return;
