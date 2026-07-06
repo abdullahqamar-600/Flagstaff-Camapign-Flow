@@ -351,7 +351,7 @@
     /* Drawer widened to fit the row-based post cards (842px card + gutter). */
     --cc-panel-w: 900px;
     --cc-chat-max: 780px;
-    --cc-split-gap: 24px;
+    --cc-split-gap: 18px;
     --cc-draft-chat-w: clamp(360px, 30vw, 520px);
     /* Landing container now sized to the two-card grid + heading gutter. */
     --cc-landing-max: 820px;
@@ -365,10 +365,8 @@
        the draft posts the larger working surface. The panel width is
        computed from the viewport after reserving the left chat rail. */
     --cc-draft-chat-w: clamp(360px, 30vw, 520px);
-    --cc-panel-w: clamp(
-      640px,
-      calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 56px),
-      1040px
+    --cc-panel-w: calc(
+      100vw - var(--sidebar-w, 80px) - var(--cc-rail-inset) - var(--cc-draft-chat-w) - var(--cc-split-gap)
     );
   }
 
@@ -604,12 +602,13 @@
     left: var(--cc-gutter-left);
     right: auto;
     bottom: 40px; /* card bottom (24) + inner padding (16) */
-    /* Match the AI chat rail while staying clear of the larger posts panel. */
-    width: var(--cc-draft-chat-w);
-    max-width: calc(100vw - var(--cc-gutter-left) - var(--cc-panel-w) - var(--cc-split-gap));
+    /* End-to-end within the left rail, while staying clear of the posts panel. */
+    width: calc(100vw - var(--cc-gutter-left) - var(--cc-panel-w) - var(--cc-split-gap));
+    max-width: none;
     padding: 0;
     z-index: 15;
     margin: 0;
+    box-sizing: border-box;
   }
   body.has-drafts .cc-composer-dock .chat-composer {
     max-width: none;
@@ -633,12 +632,14 @@
      so the card's own boundary reads as the edge of the conversation. */
   body.has-drafts .cc-scroll-mask { display: none; }
 
-  /* Messages inside the card — Figma-spec styling. User turns become
-     compact right-aligned pills; Scout turns become bordered response
-     cards so the two sides read as clearly separate. */
+  /* Messages inside the rail. Chat bubbles alternate sides and keep at
+     least 40px clear on the opposite side; generated components below
+     stretch full width. */
   body.has-drafts .cc-main .chatmsg--user {
     align-self: flex-end;
-    max-width: 560px;
+    width: fit-content;
+    max-width: calc(100% - 40px);
+    margin-left: 40px;
   }
   body.has-drafts .cc-main .chatmsg--user .chatmsg__bubble {
     background: #F4F4F4;
@@ -652,11 +653,13 @@
     box-shadow: none;
   }
   body.has-drafts .cc-main .chatmsg--post-instruction {
-    align-self: stretch;
-    max-width: 100%;
+    align-self: flex-end;
+    width: fit-content;
+    max-width: calc(100% - 40px);
+    margin-left: 40px;
   }
   body.has-drafts .cc-main .chatmsg--post-instruction .chatmsg__bubble {
-    width: 100%;
+    width: auto;
     border: 1px solid rgba(84, 91, 209, 0.16);
     background: #F7F7FF;
   }
@@ -686,10 +689,11 @@
     line-height: 20px;
     color: #263238;
   }
-  /* Scout responses in the card get a bordered surface — reads like a
-     versioned response block, not free-flowing chat. */
   body.has-drafts .cc-main .chatmsg--scout {
-    align-self: stretch;
+    align-self: flex-start;
+    width: fit-content;
+    max-width: calc(100% - 40px);
+    margin-right: 40px;
     border: 1px solid #E6E6E6;
     border-radius: 12px;
     padding: 12px;
@@ -707,6 +711,18 @@
      card — no chip treatment, just muted grey. */
   body.has-drafts .cc-main .cc-actions { margin: 0; padding: 0; }
   body.has-drafts .cc-main .cc-actions__receipt { padding: 0; }
+
+  body.has-drafts .cc-main .cc-conf,
+  body.has-drafts .cc-main .cc-playback,
+  body.has-drafts .cc-main .cc-proc-line,
+  body.has-drafts .cc-main .cc-actions {
+    align-self: stretch;
+    width: 100%;
+    max-width: none !important;
+    margin-left: 0;
+    margin-right: 0;
+    box-sizing: border-box;
+  }
 
   /* Composer input inside the card — tighten the placeholder + send
      button to the spec's proportions. */
@@ -739,13 +755,13 @@
   @media (max-width: 1440px) {
     body.has-side-panel {
       --cc-draft-chat-w: clamp(340px, 29vw, 440px);
-      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 48px);
+      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-rail-inset) - var(--cc-draft-chat-w) - var(--cc-split-gap));
     }
   }
   @media (max-width: 1200px) {
     body.has-side-panel {
       --cc-draft-chat-w: clamp(320px, 31vw, 380px);
-      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 36px);
+      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-rail-inset) - var(--cc-draft-chat-w) - var(--cc-split-gap));
     }
     body.has-side-panel .cc-main {
       padding-right: calc(var(--cc-panel-w) + var(--cc-split-gap));
@@ -757,13 +773,13 @@
   @media (max-width: 900px) {
     body.has-side-panel {
       --cc-draft-chat-w: clamp(280px, 34vw, 320px);
-      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 24px);
+      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-rail-inset) - var(--cc-draft-chat-w) - var(--cc-split-gap));
     }
   }
   @media (max-width: 720px) {
     body.has-side-panel {
       --cc-draft-chat-w: 250px;
-      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 20px);
+      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-rail-inset) - var(--cc-draft-chat-w) - var(--cc-split-gap));
     }
   }
   /* Inline drafts panel — no shadow, no rounded corners on the outer
