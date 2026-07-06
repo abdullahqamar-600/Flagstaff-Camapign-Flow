@@ -505,7 +505,7 @@
      composer's floating pill width so the two feel like one column. */
   body.has-drafts .cc-chat,
   body.has-drafts.has-side-panel .cc-chat {
-    max-width: 636px;
+    max-width: 480px;
     margin: 0;
   }
 
@@ -556,9 +556,10 @@
     flex-direction: column;
     align-items: stretch;
     gap: 24px;
-    /* Cap the chat column to the composer's width so the left side reads
-       as one balanced column instead of a wide chat over a narrow input. */
-    max-width: 636px;
+    /* Cap the chat column narrower than the composer's pill so the
+       conversation reads as a proper chat feed rather than stretching
+       end-to-end across the left half of the viewport. */
+    max-width: 480px;
     margin: 0;
     width: 100%;
     box-sizing: border-box;
@@ -6469,15 +6470,35 @@
       const campaignTitle = qs.get('campaign-title');
       let commit = null;
       if (scoutBrief) {
+        // Curated campaign detail view — the user clicked an already-
+        // generated campaign from the Scout rationale panel. Skip the
+        // shaping conversation entirely; the campaign is done, so we
+        // land straight on the split layout: chat on the left carrying
+        // the brief that generated it, drafts panel on the right.
         leaveLanding();
-        commit = { shapeKey: (shapeParam && SHAPES[shapeParam]) ? shapeParam : 'holiday' };
-        await beat(300);
+        const briefShape = SHAPES[(shapeParam && SHAPES[shapeParam]) ? shapeParam : 'holiday'];
+        titleEl.textContent = campaignTitle || briefShape.title;
+        subEl.textContent = briefShape.subtitleFactual;
+        showShapeSummary({ kind: briefShape.kind, title: campaignTitle || briefShape.title, meta: briefShape.summary });
+        await beat(200);
         if (campaignTitle) {
           appendSelectionPill({ kind: 'CAMPAIGN', label: campaignTitle, icon: 'i-megaphone' });
           await beat(200);
         }
         await appendScoutMsg(scoutBrief, { thinkFor: 260, beatAfter: 340 });
-        await beat(200);
+        await beat(300);
+        setStatus('drafting');
+        openPanelLoading();
+        await beat(400);
+        fillDrafts();
+        // fillDrafts / openPanelLoading overwrite the header with generic
+        // "Drafting…" / hardcoded 1989 copy. Re-apply the campaign
+        // identity so the detail view carries the clicked campaign's
+        // title, not the default template.
+        if (campaignTitle) titleEl.textContent = campaignTitle;
+        subEl.textContent = briefShape.subtitleFactual;
+        fireToast({ title: 'Drafts ready', desc: 'Four posts on the right. Tap any card to refine.', duration: 4200 });
+        return;
       } else if (seed) {
         // Seed comes from a URL param — treat as a typed brief so we
         // still surface what the user asked for.
