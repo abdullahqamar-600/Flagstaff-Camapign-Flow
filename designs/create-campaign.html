@@ -136,53 +136,57 @@
     inset: 0;
     pointer-events: none;
   }
-  /* Bottom layer — strongest blur, revealed only across the lower ~60%
-     of the scrim with a smooth easing fade to invisible above. Both
-     layers share the same warm-glass tint so the gradient reads as an
-     intensity change (blur strength), not a colour drift. */
+  /* Bottom layer — the strong-blur core sits right under the qdock so
+     the question surface reads as a decisive modal moment. Pure white
+     tint at controlled opacity keeps the material clean and clinical
+     rather than tinted. Ease-out mask so the blur intensity feels
+     like glass thickness fading upward, not a hard cutoff. */
   .cc-qdock-scrim::before {
-    backdrop-filter: blur(12px) saturate(1.08);
-    -webkit-backdrop-filter: blur(12px) saturate(1.08);
-    background: rgba(252, 252, 254, 0.22);
+    backdrop-filter: blur(22px) saturate(1.04);
+    -webkit-backdrop-filter: blur(22px) saturate(1.04);
+    background: rgba(255, 255, 255, 0.28);
     -webkit-mask-image: linear-gradient(
       to top,
       rgba(0, 0, 0, 1) 0%,
-      rgba(0, 0, 0, 1) 22%,
-      rgba(0, 0, 0, 0.55) 48%,
-      rgba(0, 0, 0, 0.15) 68%,
-      rgba(0, 0, 0, 0) 82%
+      rgba(0, 0, 0, 1) 28%,
+      rgba(0, 0, 0, 0.72) 46%,
+      rgba(0, 0, 0, 0.32) 62%,
+      rgba(0, 0, 0, 0.08) 76%,
+      rgba(0, 0, 0, 0) 88%
     );
     mask-image: linear-gradient(
       to top,
       rgba(0, 0, 0, 1) 0%,
-      rgba(0, 0, 0, 1) 22%,
-      rgba(0, 0, 0, 0.55) 48%,
-      rgba(0, 0, 0, 0.15) 68%,
-      rgba(0, 0, 0, 0) 82%
+      rgba(0, 0, 0, 1) 28%,
+      rgba(0, 0, 0, 0.72) 46%,
+      rgba(0, 0, 0, 0.32) 62%,
+      rgba(0, 0, 0, 0.08) 76%,
+      rgba(0, 0, 0, 0) 88%
     );
   }
-  /* Middle layer — gentler blur, extends further up so the transition
-     from "blurred" to "sharp" isn't a hard step. Same tint as the
-     bottom layer at half strength (0.10) — reinforces mid-band softness
-     without stacking harshly. */
+  /* Middle layer — a longer, gentler blur that extends further up so
+     the transition from strong blur to sharp content is a slow taper,
+     not a visible band. Pure white at half strength, matching the
+     bottom layer's material so the gradient reads as intensity, not
+     as two different films. */
   .cc-qdock-scrim::after {
-    backdrop-filter: blur(5px) saturate(1.08);
-    -webkit-backdrop-filter: blur(5px) saturate(1.08);
-    background: rgba(252, 252, 254, 0.10);
+    backdrop-filter: blur(9px) saturate(1.04);
+    -webkit-backdrop-filter: blur(9px) saturate(1.04);
+    background: rgba(255, 255, 255, 0.12);
     -webkit-mask-image: linear-gradient(
       to top,
-      rgba(0, 0, 0, 0.7) 0%,
-      rgba(0, 0, 0, 0.7) 35%,
-      rgba(0, 0, 0, 0.35) 60%,
-      rgba(0, 0, 0, 0.10) 82%,
+      rgba(0, 0, 0, 0.8) 0%,
+      rgba(0, 0, 0, 0.8) 32%,
+      rgba(0, 0, 0, 0.5) 58%,
+      rgba(0, 0, 0, 0.18) 78%,
       rgba(0, 0, 0, 0) 100%
     );
     mask-image: linear-gradient(
       to top,
-      rgba(0, 0, 0, 0.7) 0%,
-      rgba(0, 0, 0, 0.7) 35%,
-      rgba(0, 0, 0, 0.35) 60%,
-      rgba(0, 0, 0, 0.10) 82%,
+      rgba(0, 0, 0, 0.8) 0%,
+      rgba(0, 0, 0, 0.8) 32%,
+      rgba(0, 0, 0, 0.5) 58%,
+      rgba(0, 0, 0, 0.18) 78%,
       rgba(0, 0, 0, 0) 100%
     );
   }
@@ -421,30 +425,28 @@
      internal scroll, composer integrated at the bottom edge.
      ================================================================== */
   body.has-drafts .cc-main {
-    position: fixed;
-    /* Left/right derived so the card centers within the left column of
-       the split layout (between the sidebar + heading rail and the
-       drafts panel). max-width matches the spec's 667.5px inner cap. */
-    left: calc(var(--sidebar-w, 80px) + 24px);
-    right: calc(var(--cc-panel-w, 900px) + 24px);
-    top: calc(var(--cc-topbar-h, 66px) + 148px);
-    bottom: 24px;
-    max-width: 668px;
-    margin: 0 auto;
-    padding: 16px;
-    /* Warm-glass material — same recipe as the qdock scrim layers:
-       cream-white tint + gentle saturate, softened by a 12px backdrop
-       blur so the card reads as a frosted surface, not a flat pane. */
-    background: rgba(252, 252, 254, 0.55);
-    backdrop-filter: blur(12px) saturate(1.08);
-    -webkit-backdrop-filter: blur(12px) saturate(1.08);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow: hidden;
-    z-index: 10;
+    /* The chat now flows in the natural document column instead of
+       becoming a bounded card. This matches the pre-draft experience —
+       transparent surface, no border, no rounded frame, no backdrop
+       blur — so the drafts panel is the only visible container in the
+       drafting state. Chat sits centered in the remaining left column. */
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    max-width: none;
+    margin: 0;
+    padding: 8px var(--cc-rail-inset) 140px var(--cc-rail-inset);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 0;
+    border-radius: 0;
+    display: block;
+    gap: 0;
+    overflow: visible;
+    z-index: auto;
     transition: none;
   }
   /* The chatlog now scrolls INSIDE the card, not with the page. Gives
@@ -1649,6 +1651,146 @@
     background: #2E7D32;
     color: #FFFFFF;
   }
+  /* Post-CTA hero — indigo-tinted lift so the confirm state reads as
+     "the moment before posting" rather than an alert. */
+  .cc-modal__hero-mark--post {
+    background: var(--camp-primary, #545BD1);
+    color: #FFFFFF;
+  }
+  /* Posting-state hero — the same indigo lift as the confirm mark, with
+     two concentric rings pulsing outward to signal work in flight. */
+  .cc-modal__hero--posting { position: relative; }
+  .cc-modal__hero--posting .cc-modal__hero-mark--posting {
+    background: var(--camp-primary, #545BD1);
+    color: #FFFFFF;
+    animation: ccPostingPulse 1400ms ease-in-out infinite;
+  }
+  .cc-modal__hero-ring {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 2px solid rgba(84, 91, 209, 0.35);
+    animation: ccPostingRing 1600ms cubic-bezier(0.2, 0.6, 0.2, 1) infinite;
+    pointer-events: none;
+  }
+  .cc-modal__hero-ring--delay { animation-delay: 700ms; }
+  @keyframes ccPostingRing {
+    0%   { transform: scale(0.85); opacity: 0.55; }
+    70%  { transform: scale(1.8);  opacity: 0; }
+    100% { transform: scale(1.8);  opacity: 0; }
+  }
+  @keyframes ccPostingPulse {
+    0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(84, 91, 209, 0.35); }
+    50%      { transform: scale(1.03); box-shadow: 0 0 0 6px rgba(84, 91, 209, 0.00); }
+  }
+  /* Posting progress list — each post gets a row that flips from a
+     spinner (pending) to a check (done) as the animation walks through. */
+  .cc-schedule-progress {
+    list-style: none;
+    margin: 8px 0 20px 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+  }
+  .cc-schedule-progress__row {
+    display: grid;
+    grid-template-columns: 22px 60px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--camp-surface, #FFFFFF);
+    border: 1px solid var(--camp-border-hairline, #E4E7EC);
+    border-radius: 12px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--camp-text-secondary, #667085);
+    transition: border-color 220ms var(--ease-standard), background 220ms var(--ease-standard);
+  }
+  .cc-schedule-progress__icon {
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: var(--camp-primary-tint, #EEF0FF);
+    color: var(--camp-primary, #545BD1);
+    flex-shrink: 0;
+  }
+  .cc-schedule-progress__icon svg { width: 12px; height: 12px; }
+  .cc-schedule-progress__icon--spin svg { animation: ccSpin 900ms linear infinite; }
+  @keyframes ccSpin { to { transform: rotate(360deg); } }
+  .cc-schedule-progress__num {
+    font-weight: 600; color: var(--camp-text-primary, #101828);
+    font-size: 12px; letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .cc-schedule-progress__hook {
+    color: var(--camp-text-primary, #101828);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .cc-schedule-progress__status {
+    color: var(--camp-text-tertiary, #98A2B3);
+    font-size: 12px; font-weight: 500;
+    letter-spacing: 0.1px;
+  }
+  .cc-schedule-progress__row--done .cc-schedule-progress__icon {
+    background: #E7F5EA;
+    color: #2E7D32;
+  }
+  .cc-schedule-progress__row--done .cc-schedule-progress__status { color: #2E7D32; }
+  .cc-schedule-progress__row--done { border-color: rgba(46, 125, 50, 0.25); }
+
+  /* Success receipt — one row per post, showing what's live vs queued. */
+  .cc-schedule-receipt {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0 20px 0;
+    text-align: left;
+  }
+  .cc-schedule-receipt__row {
+    display: grid;
+    grid-template-columns: 22px 60px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--camp-surface, #FFFFFF);
+    border: 1px solid var(--camp-border-hairline, #E4E7EC);
+    border-radius: 12px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--camp-text-secondary, #667085);
+  }
+  .cc-schedule-receipt__row--live { border-color: rgba(46, 125, 50, 0.30); }
+  .cc-schedule-receipt__icon {
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: var(--camp-primary-tint, #EEF0FF);
+    color: var(--camp-primary, #545BD1);
+    flex-shrink: 0;
+  }
+  .cc-schedule-receipt__row--live .cc-schedule-receipt__icon {
+    background: #E7F5EA; color: #2E7D32;
+  }
+  .cc-schedule-receipt__icon svg { width: 12px; height: 12px; }
+  .cc-schedule-receipt__num {
+    font-weight: 600; color: var(--camp-text-primary, #101828);
+    font-size: 12px; letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .cc-schedule-receipt__hook {
+    color: var(--camp-text-primary, #101828);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .cc-schedule-receipt__status { color: var(--camp-text-tertiary, #98A2B3); font-size: 12px; font-weight: 500; }
+  .cc-schedule-receipt__row--live .cc-schedule-receipt__status { color: #2E7D32; }
   @keyframes ccScrimIn {
     0%   { opacity: 0; }
     100% { opacity: 1; }
@@ -2305,21 +2447,21 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
-    padding: 32px 0 12px;
+    gap: 22px;
+    padding: 40px 0 16px;
     text-align: left;
   }
   .cc-landing--intents .cc-landing__lead {
     justify-content: flex-start;
     color: var(--camp-text-secondary, #667085);
-    font-size: 13px;
+    font-size: 14px;
   }
   .cc-intent-pills {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
     width: 100%;
-    max-width: 480px;
+    max-width: 520px;
     align-self: flex-start;
   }
   .cc-intent-hint { align-self: flex-start; }
@@ -2327,11 +2469,11 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
-    padding: 16px 20px;
+    gap: 8px;
+    padding: 22px 26px;
     background: var(--camp-surface, #FFFFFF);
     border: 1px solid var(--camp-border-hairline, #E4E7EC);
-    border-radius: 12px;
+    border-radius: 16px;
     font-family: var(--font-sans);
     color: var(--camp-text-primary, #101828);
     text-align: left;
@@ -2342,7 +2484,7 @@
       transform 180ms var(--ease-standard),
       box-shadow 180ms var(--ease-standard);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-    line-height: 1.35;
+    line-height: 1.4;
   }
   .cc-intent-pill:hover {
     border-color: var(--camp-primary, #545BD1);
@@ -2358,7 +2500,7 @@
     border-color: rgba(84, 91, 209, 0.35);
   }
   .cc-intent-pill__label {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
     color: inherit;
     letter-spacing: 0.05px;
@@ -2366,15 +2508,15 @@
   .cc-intent-pill__meta {
     color: var(--camp-text-tertiary, #98A2B3);
     font-weight: 400;
-    font-size: 12.5px;
+    font-size: 13.5px;
     letter-spacing: 0.1px;
   }
   .cc-intent-hint {
     font-family: var(--font-sans);
-    font-size: 12.5px;
+    font-size: 13.5px;
     color: var(--camp-text-tertiary, #98A2B3);
     letter-spacing: 0.1px;
-    margin-top: 4px;
+    margin-top: 8px;
   }
   /* Retire the old shape-card styles when intent-mode is present. */
   .cc-landing--intents .cc-shape-grid { display: none; }
@@ -2390,9 +2532,18 @@
      campaign's identity marker on the top-left corner regardless
      of state.
      ================================================================== */
+  /* Landing container sits inside the chat column (same width, same
+     centered position). Pills, lead badge, and hint are centered
+     within that column so they read as a gathered composition rather
+     than hugging the left rail — the chat column itself is what
+     anchors them to the conversation's future position. */
   body:not(.has-side-panel) .cc-landing--intents {
     align-items: center;
     text-align: center;
+    max-width: var(--cc-chat-max, 780px);
+    margin: 0 auto;
+    padding-left: 0;
+    padding-right: 0;
   }
   body:not(.has-side-panel) .cc-landing--intents .cc-landing__lead {
     justify-content: center;
@@ -2444,8 +2595,11 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    margin: 6px 0 14px 40px; /* aligns under .chatmsg__text (avatar 28 + gap 12) */
-    max-width: 640px;
+    /* Settled receipt aligns to the chat container's left edge — no
+       avatar-under indent — so the "thinking" metadata reads as a page
+       marker, not a Scout speech attribute. */
+    margin: 6px 0 14px 0;
+    max-width: 100%;
   }
   .cc-actions__ticker {
     display: flex;
@@ -2520,7 +2674,7 @@
     border: none;
     border-radius: 0;
     padding: 2px 0;
-    color: #98A2B3; /* muted grey — reads as done, not active */
+    color: #344054; /* dark grey — reads as settled thinking, sits on the page like metadata */
     font-size: 12px; font-weight: 500;
     line-height: 1.2;
     cursor: pointer;
@@ -2534,11 +2688,11 @@
     to   { opacity: 1; transform: translateY(0); }
   }
   .cc-actions--settled .cc-actions__receipt { display: inline-flex; }
-  .cc-actions__receipt:hover { color: #667085; }
+  .cc-actions__receipt:hover { color: #101828; }
   .cc-actions__receipt-check {
     width: 12px; height: 12px;
     display: inline-flex; align-items: center; justify-content: center;
-    color: #98A2B3;
+    color: #344054;
     flex-shrink: 0;
     opacity: 0.9;
   }
@@ -3010,7 +3164,8 @@
     <span class="side-panel__count" id="cc-panel-count">Four drafts ready</span>
     <div class="side-panel__toolbar">
       <button class="sbtn sbtn--ghost" type="button" data-cc-notquite>Revise</button>
-      <button class="sbtn sbtn--primary" type="button" data-cc-schedule>Schedule campaign</button>
+      <button class="sbtn sbtn--ghost" type="button" data-cc-schedule-later>Schedule for later</button>
+      <button class="sbtn sbtn--primary" type="button" data-cc-schedule>Post campaign</button>
     </div>
     <button class="side-panel__close" type="button" aria-label="Close" data-cc-close>
       <svg viewBox="0 0 24 24" fill="none"><use href="#i-x-square"/></svg>
@@ -3071,12 +3226,12 @@
     <!-- Confirm state -->
     <div class="cc-schedule-view cc-schedule-view--confirm" id="cc-schedule-view-confirm">
       <div class="cc-modal__hero">
-        <span class="cc-modal__hero-mark">
-          <svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-x-square"/></svg>
+        <span class="cc-modal__hero-mark cc-modal__hero-mark--post" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
         </span>
       </div>
-      <h2 class="cc-modal__title" id="cc-schedule-title">Send these posts to X</h2>
-      <p class="cc-modal__desc" id="cc-schedule-desc">You can still edit or pause them from Campaigns after they're queued.</p>
+      <h2 class="cc-modal__title" id="cc-schedule-title">Post your campaign to X</h2>
+      <p class="cc-modal__desc" id="cc-schedule-desc">Post 1 goes live now. The rest queue up to the schedule you saw.</p>
 
       <!-- Per-post schedule preview -->
       <div class="cc-schedule-list" id="cc-schedule-list" role="list"></div>
@@ -3084,14 +3239,29 @@
       <!-- Optional warning strip when a post has an unresolved issue. -->
       <div class="cc-schedule-warn" id="cc-schedule-warn" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
-        <span id="cc-schedule-warn-text">One post has an unresolved image mismatch. Schedule anyway?</span>
+        <span id="cc-schedule-warn-text">One post has an unresolved image mismatch. Post anyway?</span>
       </div>
 
       <div class="cc-modal__foot cc-modal__foot--three">
         <button class="cc-modal__btn cc-modal__btn--ghost" type="button" id="cc-schedule-cancel">Not yet</button>
-        <button class="cc-modal__btn cc-modal__btn--secondary" type="button" id="cc-schedule-publish-now">Publish first now</button>
-        <button class="cc-modal__btn cc-modal__btn--primary" type="button" id="cc-schedule-confirm">Schedule all</button>
+        <button class="cc-modal__btn cc-modal__btn--secondary" type="button" id="cc-schedule-publish-now">Schedule for later</button>
+        <button class="cc-modal__btn cc-modal__btn--primary" type="button" id="cc-schedule-confirm">Post campaign</button>
       </div>
+    </div>
+
+    <!-- Posting state — animated intermediate. Held briefly so the "Post"
+         action reads as a decisive commit rather than an instant toast. -->
+    <div class="cc-schedule-view cc-schedule-view--posting" id="cc-schedule-view-posting" hidden>
+      <div class="cc-modal__hero cc-modal__hero--posting" aria-hidden="true">
+        <span class="cc-modal__hero-ring"></span>
+        <span class="cc-modal__hero-ring cc-modal__hero-ring--delay"></span>
+        <span class="cc-modal__hero-mark cc-modal__hero-mark--posting">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+        </span>
+      </div>
+      <h2 class="cc-modal__title" id="cc-schedule-posting-title">Posting your campaign…</h2>
+      <p class="cc-modal__desc" id="cc-schedule-posting-desc">Publishing Post 1 to X and queuing the rest on your schedule.</p>
+      <ul class="cc-schedule-progress" id="cc-schedule-progress" aria-live="polite"></ul>
     </div>
 
     <!-- Success state -->
@@ -3102,7 +3272,9 @@
         </span>
       </div>
       <h2 class="cc-modal__title" id="cc-schedule-success-title">Your campaign is live</h2>
-      <p class="cc-modal__desc" id="cc-schedule-success-desc">Four posts queued. I'll publish them on your schedule and nudge you if anything needs attention.</p>
+      <p class="cc-modal__desc" id="cc-schedule-success-desc">Post 1 just went out. The remaining three are queued to publish on their schedule.</p>
+      <!-- Per-post live vs queued receipt. -->
+      <div class="cc-schedule-receipt" id="cc-schedule-receipt" role="list"></div>
       <div class="cc-modal__foot">
         <button class="cc-modal__btn cc-modal__btn--ghost" type="button" id="cc-schedule-view-details">View schedule</button>
         <button class="cc-modal__btn cc-modal__btn--primary" type="button" id="cc-schedule-done">Back to Campaigns</button>
@@ -5205,11 +5377,13 @@
       fireToast({ kind: 'info', title: 'Saved as draft', desc: 'You can pick this back up from Campaigns.', duration: 3400 });
     });
 
-    // Schedule modal wiring — populates a per-post preview, warns on
-    // unresolved issues, offers "Publish now" for immediate posting,
-    // and transitions to a success state on confirm.
+    // Post-campaign modal wiring — three states: confirm → posting → success.
+    // Primary action posts the first post now and queues the rest to the
+    // schedule preview. Secondary action ("Schedule for later") queues
+    // everything without publishing anything immediately.
     const scheduleView   = {
       confirm: document.getElementById('cc-schedule-view-confirm'),
+      posting: document.getElementById('cc-schedule-view-posting'),
       success: document.getElementById('cc-schedule-view-success'),
     };
     const scheduleList     = document.getElementById('cc-schedule-list');
@@ -5219,6 +5393,10 @@
     const schedulePublish  = document.getElementById('cc-schedule-publish-now');
     const scheduleDone     = document.getElementById('cc-schedule-done');
     const scheduleViewDet  = document.getElementById('cc-schedule-view-details');
+    const schedulePostingTitle = document.getElementById('cc-schedule-posting-title');
+    const schedulePostingDesc  = document.getElementById('cc-schedule-posting-desc');
+    const scheduleProgress = document.getElementById('cc-schedule-progress');
+    const scheduleReceipt  = document.getElementById('cc-schedule-receipt');
 
     function detectMismatchCount() {
       // Any post whose image slot carries the mismatch class is unresolved.
@@ -5242,12 +5420,15 @@
     function openScheduleModal() {
       // Reset views.
       scheduleView.confirm.hidden = false;
+      scheduleView.posting.hidden = true;
       scheduleView.success.hidden = true;
       // Title reflects the current post count.
       const n = postState.length;
-      const words = n === 1 ? 'this post' : n + ' posts';
-      scheduleTitleEl.textContent = 'Send ' + words + ' to X';
-      scheduleDescEl.textContent  = 'I\'ll queue them on the schedule you saw. You can still edit or pause them from Campaigns.';
+      const words = n === 1 ? 'this post' : 'your ' + n + '-post campaign';
+      scheduleTitleEl.textContent = n === 1 ? 'Post to X' : 'Post your campaign to X';
+      scheduleDescEl.textContent  = n === 1
+        ? 'Publishing this post to @swiftie.central right now.'
+        : 'Post 1 goes live now on @swiftie.central. The rest queue up to the schedule you saw.';
       // Preview list.
       buildScheduleList();
       // Warn if anything unresolved.
@@ -5255,7 +5436,7 @@
       if (mismatches > 0) {
         scheduleWarn.hidden = false;
         document.getElementById('cc-schedule-warn-text').textContent =
-          mismatches + ' post' + (mismatches > 1 ? 's have' : ' has') + ' an unresolved image mismatch. Schedule anyway?';
+          mismatches + ' post' + (mismatches > 1 ? 's have' : ' has') + ' an unresolved image mismatch. Post anyway?';
       } else {
         scheduleWarn.hidden = true;
       }
@@ -5269,33 +5450,108 @@
       if (e.target === scheduleScrim) closeScheduleModal();
     });
 
-    // Commit the whole batch to the schedule → success view.
-    function commitSchedule({ publishFirstNow } = {}) {
+    // Build the animated posting list — one row per post, walking from
+    // spinner ("Posting…" / "Queuing…") to check ("Live" / "Queued").
+    function buildProgressList({ scheduleOnly }) {
+      scheduleProgress.innerHTML = postState.map((p, i) => {
+        const pending = scheduleOnly ? 'Queuing…' : (i === 0 ? 'Posting…' : 'Queuing…');
+        return `<li class="cc-schedule-progress__row" data-progress-idx="${i}">
+          <span class="cc-schedule-progress__icon cc-schedule-progress__icon--spin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M21 12a9 9 0 1 1-6.2-8.55" />
+            </svg>
+          </span>
+          <span class="cc-schedule-progress__num">Post ${i+1}</span>
+          <span class="cc-schedule-progress__hook">${p.hook}</span>
+          <span class="cc-schedule-progress__status">${pending}</span>
+        </li>`;
+      }).join('');
+    }
+
+    // Flip a row from spinner → check with the settled label.
+    function markProgressDone(idx, { scheduleOnly }) {
+      const row = scheduleProgress.querySelector('[data-progress-idx="' + idx + '"]');
+      if (!row) return;
+      row.classList.add('cc-schedule-progress__row--done');
+      const icon = row.querySelector('.cc-schedule-progress__icon');
+      icon.classList.remove('cc-schedule-progress__icon--spin');
+      icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 20 7"/></svg>';
+      const status = row.querySelector('.cc-schedule-progress__status');
+      status.textContent = scheduleOnly ? 'Queued' : (idx === 0 ? 'Live' : 'Queued');
+    }
+
+    // Success receipt — settled version of the progress list, shown on
+    // the success view so the outcome is visible at a glance.
+    function buildSuccessReceipt({ scheduleOnly }) {
+      scheduleReceipt.innerHTML = postState.map((p, i) => {
+        const isLive = !scheduleOnly && i === 0;
+        return `<div class="cc-schedule-receipt__row${isLive ? ' cc-schedule-receipt__row--live' : ''}" role="listitem">
+          <span class="cc-schedule-receipt__icon">
+            ${isLive
+              ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 20 7"/></svg>'
+              : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>'}
+          </span>
+          <span class="cc-schedule-receipt__num">Post ${i+1}</span>
+          <span class="cc-schedule-receipt__hook">${p.hook}</span>
+          <span class="cc-schedule-receipt__status">${isLive ? 'Live now' : p.day}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Commit the whole batch. `scheduleOnly` = true → queue everything,
+    // publish nothing immediately (the "Schedule for later" secondary CTA).
+    // `scheduleOnly` = false (default) → post 1 goes live now, rest queue.
+    async function commitSchedule({ scheduleOnly } = {}) {
+      // 1. Confirm → Posting transition. Show the animated progress list.
       scheduleView.confirm.hidden = true;
-      scheduleView.success.hidden = false;
+      scheduleView.posting.hidden = false;
       const n = postState.length;
-      const successTitle = publishFirstNow
-        ? 'First post going live now'
-        : (n === 1 ? 'Your post is scheduled' : 'Your campaign is scheduled');
-      document.getElementById('cc-schedule-success-title').textContent = successTitle;
-      document.getElementById('cc-schedule-success-desc').textContent = publishFirstNow
-        ? 'Post 1 is publishing now. The remaining ' + (n-1) + ' will publish on schedule.'
-        : n + ' posts queued. I\'ll publish them on your schedule and nudge you if anything needs attention.';
-      // Also update the surface.
+      schedulePostingTitle.textContent = scheduleOnly
+        ? 'Queuing your campaign…'
+        : 'Posting your campaign…';
+      schedulePostingDesc.textContent = scheduleOnly
+        ? 'Adding all ' + n + ' posts to your schedule.'
+        : 'Publishing Post 1 to X and queuing the rest on your schedule.';
+      buildProgressList({ scheduleOnly });
+
+      // 2. Walk the list — flip each row's spinner to a check on a
+      // rhythm. The first post gets a slightly longer beat so "Live"
+      // reads as the moment things go public.
+      for (let i = 0; i < n; i++) {
+        await beat(scheduleOnly ? 420 : (i === 0 ? 900 : 480));
+        markProgressDone(i, { scheduleOnly });
+      }
+      await beat(500);
+
+      // 3. Posting → Success. Show the settled receipt + settled CTAs.
+      scheduleView.posting.hidden = true;
+      scheduleView.success.hidden = false;
+      document.getElementById('cc-schedule-success-title').textContent = scheduleOnly
+        ? (n === 1 ? 'Your post is scheduled' : 'Your campaign is scheduled')
+        : (n === 1 ? 'Your post is live' : 'Your campaign is live');
+      document.getElementById('cc-schedule-success-desc').textContent = scheduleOnly
+        ? 'All ' + n + ' posts are queued to publish on your schedule.'
+        : 'Post 1 just went out. The remaining ' + (n-1) + ' are queued to publish on their schedule.';
+      buildSuccessReceipt({ scheduleOnly });
+
+      // 4. Settle the surface — status pill goes to ready, toolbar
+      // buttons disable so the user can't re-fire the flow, and a
+      // toast lands on the bottom-right as a reassurance cue.
       setStatus('ready');
-      footHint.textContent = publishFirstNow
-        ? 'Post 1 publishing now, ' + (n-1) + ' queued.'
-        : 'All ' + n + ' posts are queued. Scout will publish them on schedule.';
+      footHint.textContent = scheduleOnly
+        ? 'All ' + n + ' posts are queued. Scout will publish them on schedule.'
+        : 'Post 1 is live, ' + (n-1) + ' queued.';
       footbar.querySelectorAll('button').forEach(b => { b.disabled = true; });
+      panel.querySelectorAll('.side-panel__toolbar button').forEach(b => { b.disabled = true; });
       fireToast({
-        title: publishFirstNow ? 'Publishing Post 1' : 'Scheduled to X',
-        desc: publishFirstNow ? (n-1) + ' more queued' : n + ' posts queued',
+        title: scheduleOnly ? 'Campaign scheduled' : 'Campaign live',
+        desc: scheduleOnly ? n + ' posts queued to X' : 'Post 1 is on X · ' + (n-1) + ' queued',
         duration: 4600,
       });
     }
 
-    scheduleConfirm.addEventListener('click', () => commitSchedule({ publishFirstNow: false }));
-    schedulePublish.addEventListener('click', () => commitSchedule({ publishFirstNow: true }));
+    scheduleConfirm.addEventListener('click', () => commitSchedule({ scheduleOnly: false }));
+    schedulePublish.addEventListener('click', () => commitSchedule({ scheduleOnly: true }));
 
     // Success actions — for the prototype, both close the modal and
     // return the user to the surface. In production these would nav.
@@ -5307,9 +5563,12 @@
       fireToast({ kind: 'info', title: 'Scheduler view', desc: 'Opens the calendar in production.', duration: 2800 });
     });
 
-    // Footbar — Not quite and Schedule end states.
-    footbar.addEventListener('click', async (e) => {
+    // Panel toolbar — Revise / Schedule for later / Post campaign. Delegated
+    // on the document so the same handlers work whether the buttons live
+    // in the drafts side panel (current) or the retired footbar.
+    document.addEventListener('click', async (e) => {
       const nq = e.target.closest('[data-cc-notquite]');
+      const later = e.target.closest('[data-cc-schedule-later]');
       const sc = e.target.closest('[data-cc-schedule]');
       if (nq) {
         const result = await openQDock({
@@ -5329,6 +5588,14 @@
         postState.forEach((p) => { p.version += 1; });
         renderPostCards();
         setStatus('review');
+        return;
+      }
+      if (later) {
+        // "Schedule for later" from the panel toolbar — open the modal and
+        // auto-run the schedule-only path so the user goes straight to the
+        // queuing animation without a second confirmation dialog.
+        openScheduleModal();
+        commitSchedule({ scheduleOnly: true });
         return;
       }
       if (sc) {
