@@ -351,11 +351,25 @@
     /* Drawer widened to fit the row-based post cards (842px card + gutter). */
     --cc-panel-w: 900px;
     --cc-chat-max: 780px;
+    --cc-split-gap: 24px;
+    --cc-draft-chat-w: clamp(360px, 30vw, 520px);
     /* Landing container now sized to the two-card grid + heading gutter. */
     --cc-landing-max: 820px;
     /* Top chrome (topbar + campaign header) that stays stuck to viewport.
        Used to compute the scrolling region below. */
     --cc-topbar-h: 66px;
+  }
+
+  body.has-side-panel {
+    /* Split layout: keep Scout as the narrower decision rail and give
+       the draft posts the larger working surface. The panel width is
+       computed from the viewport after reserving the left chat rail. */
+    --cc-draft-chat-w: clamp(360px, 30vw, 520px);
+    --cc-panel-w: clamp(
+      640px,
+      calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 56px),
+      1040px
+    );
   }
 
   /* Header lives at the top-left of the main area — sticky beneath the
@@ -463,30 +477,30 @@
   /* When the side panel is open: it's flush-right, so composer/footbar
      end at exactly the panel edge. Chat column ANCHORS to the left (not
      centered) — the conversation slides into the header's column. Panel
-     sits INSIDE the layout with a 12px gutter from the chat area — no
+     sits INSIDE the layout with a shared split gutter from the chat area — no
      elevation, no shadow, no floating card feel. Mirrors the campaigns
      dashboard's inline panel pattern. */
-  body.has-side-panel .cc-composer-dock { right: calc(var(--cc-panel-w) + 12px); }
-  body.has-side-panel .footbar { right: calc(var(--cc-panel-w) + 12px); }
+  body.has-side-panel .cc-composer-dock { right: calc(var(--cc-panel-w) + var(--cc-split-gap)); }
+  body.has-side-panel .footbar { right: calc(var(--cc-panel-w) + var(--cc-split-gap)); }
 
   body.has-side-panel .cc-main {
     max-width: none;
     margin: 0;
     padding-left: var(--cc-gutter-left);
-    padding-right: calc(var(--cc-panel-w) + 24px);
+    padding-right: calc(var(--cc-panel-w) + var(--cc-split-gap));
   }
   /* Chat column also shrinks so text doesn't run underneath the panel.
      The chatlog wraps to the remaining viewport width, and the header
      mirrors the same right-padding so the title doesn't get clipped. */
   body.has-side-panel .cc-header {
-    padding-right: calc(var(--cc-panel-w) + 24px);
+    padding-right: calc(var(--cc-panel-w) + var(--cc-split-gap));
   }
   /* In drafting state the header keeps its usual left inset but doesn't
      compress the title — the drafts panel to the right handles its own
      space. Title/subtitle scale down so they sit above the card without
      dominating it. */
   body.has-drafts .cc-header {
-    padding-right: calc(var(--cc-panel-w, 900px) + 24px);
+    padding-right: calc(var(--cc-panel-w) + var(--cc-split-gap));
     padding-bottom: 12px;
   }
   body.has-drafts .cc-title { font-size: 24px; line-height: 30px; }
@@ -502,14 +516,10 @@
     margin: 0;
   }
   /* In the drafting phase specifically, the chat column matches the
-     composer's floating pill width so the two feel like one column. */
-  /* Responsive chat column — scales with viewport instead of a fixed
-     cap. Floor keeps it usable on narrow screens; ceiling keeps it
-     from sprawling on wide monitors. Below 1200px it hugs the
-     available column. */
+     responsive Scout rail so the right post panel remains dominant. */
   body.has-drafts .cc-chat,
   body.has-drafts.has-side-panel .cc-chat {
-    max-width: clamp(340px, 28vw, 560px);
+    max-width: min(100%, var(--cc-draft-chat-w));
     margin: 0;
   }
 
@@ -544,6 +554,10 @@
     z-index: auto;
     transition: none;
   }
+  body.has-drafts.has-side-panel .cc-main {
+    padding-left: var(--cc-gutter-left);
+    padding-right: calc(var(--cc-panel-w) + var(--cc-split-gap));
+  }
   /* The chatlog now scrolls INSIDE the card, not with the page. Gives
      each message a consistent 24px rhythm and 16/24 inner padding.
      Stacked class selector `.has-drafts.has-side-panel` beats the plain
@@ -560,10 +574,10 @@
     flex-direction: column;
     align-items: stretch;
     gap: 24px;
-    /* Responsive chat column — scales with viewport width. Floor
-       keeps the feed usable on narrow screens; ceiling keeps it from
-       sprawling on wide monitors. */
-    max-width: clamp(340px, 28vw, 560px);
+    /* The AI side stays intentionally narrower than the post panel.
+       Width is driven by the split variables above so the rail responds
+       with the viewport instead of drifting under the drafts panel. */
+    max-width: min(100%, var(--cc-draft-chat-w));
     margin: 0;
     width: 100%;
     box-sizing: border-box;
@@ -587,17 +601,15 @@
      radius, white surface — matches Figma spec. */
   body.has-drafts .cc-composer-dock {
     position: fixed;
-    /* Card left = sidebar + 24; add 16px inner padding = 40 total. */
-    left: calc(var(--sidebar-w, 80px) + 40px);
-    right: calc(var(--cc-panel-w, 900px) + 40px);
+    left: var(--cc-gutter-left);
+    right: auto;
     bottom: 40px; /* card bottom (24) + inner padding (16) */
-    /* Composer pill tracks the chat width responsively — always a
-       little wider than the chat feed so the two feel like one column
-       without the composer looking cramped. */
-    max-width: clamp(400px, 34vw, 660px);
+    /* Match the AI chat rail while staying clear of the larger posts panel. */
+    width: var(--cc-draft-chat-w);
+    max-width: calc(100vw - var(--cc-gutter-left) - var(--cc-panel-w) - var(--cc-split-gap));
     padding: 0;
     z-index: 15;
-    margin: 0 auto;
+    margin: 0;
   }
   body.has-drafts .cc-composer-dock .chat-composer {
     max-width: none;
@@ -722,18 +734,36 @@
     color: #98A2B3;
   }
 
-  /* Narrower viewports: shrink the panel so the chat column keeps at
-     least ~440px of breathing room. */
+  /* Narrower viewports: preserve the hierarchy, posts get more space
+     than Scout, but both rails compress instead of overlapping. */
   @media (max-width: 1440px) {
-    :root { --cc-panel-w: 720px; }
+    body.has-side-panel {
+      --cc-draft-chat-w: clamp(340px, 29vw, 440px);
+      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 48px);
+    }
   }
   @media (max-width: 1200px) {
-    :root { --cc-panel-w: 560px; }
+    body.has-side-panel {
+      --cc-draft-chat-w: clamp(320px, 31vw, 380px);
+      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 36px);
+    }
     body.has-side-panel .cc-main {
-      padding-right: calc(var(--cc-panel-w) + 16px);
+      padding-right: calc(var(--cc-panel-w) + var(--cc-split-gap));
     }
     body.has-side-panel .cc-header {
-      padding-right: calc(var(--cc-panel-w) + 16px);
+      padding-right: calc(var(--cc-panel-w) + var(--cc-split-gap));
+    }
+  }
+  @media (max-width: 900px) {
+    body.has-side-panel {
+      --cc-draft-chat-w: clamp(280px, 34vw, 320px);
+      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 24px);
+    }
+  }
+  @media (max-width: 720px) {
+    body.has-side-panel {
+      --cc-draft-chat-w: 250px;
+      --cc-panel-w: calc(100vw - var(--sidebar-w, 80px) - var(--cc-draft-chat-w) - 20px);
     }
   }
   /* Inline drafts panel — no shadow, no rounded corners on the outer
