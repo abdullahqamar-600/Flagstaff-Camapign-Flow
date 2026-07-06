@@ -154,23 +154,30 @@
     backdrop-filter: blur(22px) saturate(1.12);
     -webkit-backdrop-filter: blur(22px) saturate(1.12);
     background: rgba(248, 250, 253, 0.30);
+    /* Strictly ascending stops — previous version mixed pixel-from-top
+       (like 80px) with percent-from-bottom stops that reversed order,
+       which collapses into a HARD BAND under CSS clamping rules. This
+       reads as the "sudden crop" of the blur. Fixed by using a smooth
+       0% → 100% ramp with generous mid-band easing. */
     -webkit-mask-image: linear-gradient(
       to top,
-      rgba(0, 0, 0, 1) 0px,
-      rgba(0, 0, 0, 1) 220px,
-      rgba(0, 0, 0, 0.72) calc(50% - 40px),
-      rgba(0, 0, 0, 0.32) calc(30% - 20px),
-      rgba(0, 0, 0, 0.08) calc(15% - 10px),
-      rgba(0, 0, 0, 0) 80px
+      rgba(0, 0, 0, 1)    0%,
+      rgba(0, 0, 0, 1)    38%,
+      rgba(0, 0, 0, 0.78) 50%,
+      rgba(0, 0, 0, 0.42) 62%,
+      rgba(0, 0, 0, 0.18) 72%,
+      rgba(0, 0, 0, 0.05) 82%,
+      rgba(0, 0, 0, 0)    92%
     );
     mask-image: linear-gradient(
       to top,
-      rgba(0, 0, 0, 1) 0px,
-      rgba(0, 0, 0, 1) 220px,
-      rgba(0, 0, 0, 0.72) calc(50% - 40px),
-      rgba(0, 0, 0, 0.32) calc(30% - 20px),
-      rgba(0, 0, 0, 0.08) calc(15% - 10px),
-      rgba(0, 0, 0, 0) 80px
+      rgba(0, 0, 0, 1)    0%,
+      rgba(0, 0, 0, 1)    38%,
+      rgba(0, 0, 0, 0.78) 50%,
+      rgba(0, 0, 0, 0.42) 62%,
+      rgba(0, 0, 0, 0.18) 72%,
+      rgba(0, 0, 0, 0.05) 82%,
+      rgba(0, 0, 0, 0)    92%
     );
   }
   /* Middle layer — a longer, gentler blur that extends further up so
@@ -180,21 +187,28 @@
     backdrop-filter: blur(9px) saturate(1.12);
     -webkit-backdrop-filter: blur(9px) saturate(1.12);
     background: rgba(248, 250, 253, 0.14);
+    /* Same fix — strictly ascending stops. The middle layer extends
+       farther up than the strong layer so the composite fade reaches
+       all the way to the scrim's top edge without a visible seam. */
     -webkit-mask-image: linear-gradient(
       to top,
-      rgba(0, 0, 0, 0.85) 0px,
-      rgba(0, 0, 0, 0.85) 260px,
-      rgba(0, 0, 0, 0.55) calc(55% - 30px),
-      rgba(0, 0, 0, 0.22) calc(25% - 10px),
-      rgba(0, 0, 0, 0) 40px
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(0, 0, 0, 0.85) 32%,
+      rgba(0, 0, 0, 0.62) 48%,
+      rgba(0, 0, 0, 0.36) 62%,
+      rgba(0, 0, 0, 0.16) 76%,
+      rgba(0, 0, 0, 0.04) 88%,
+      rgba(0, 0, 0, 0)    100%
     );
     mask-image: linear-gradient(
       to top,
-      rgba(0, 0, 0, 0.85) 0px,
-      rgba(0, 0, 0, 0.85) 260px,
-      rgba(0, 0, 0, 0.55) calc(55% - 30px),
-      rgba(0, 0, 0, 0.22) calc(25% - 10px),
-      rgba(0, 0, 0, 0) 40px
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(0, 0, 0, 0.85) 32%,
+      rgba(0, 0, 0, 0.62) 48%,
+      rgba(0, 0, 0, 0.36) 62%,
+      rgba(0, 0, 0, 0.16) 76%,
+      rgba(0, 0, 0, 0.04) 88%,
+      rgba(0, 0, 0, 0)    100%
     );
   }
   /* Noise layer — inline SVG turbulence at ~5% opacity. Grounds the
@@ -210,19 +224,21 @@
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0.05  0 0 0 0 0.05  0 0 0 0 0.05  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
     background-size: 240px 240px;
     mix-blend-mode: multiply;
+    /* Same fix — strictly ascending stops so the noise fades cleanly
+       instead of collapsing to a hard band. */
     -webkit-mask-image: linear-gradient(
       to top,
-      rgba(0, 0, 0, 1) 0px,
-      rgba(0, 0, 0, 1) 220px,
-      rgba(0, 0, 0, 0.4) calc(45% - 30px),
-      rgba(0, 0, 0, 0) calc(15% - 10px)
+      rgba(0, 0, 0, 1)   0%,
+      rgba(0, 0, 0, 1)   40%,
+      rgba(0, 0, 0, 0.4) 60%,
+      rgba(0, 0, 0, 0)   80%
     );
     mask-image: linear-gradient(
       to top,
-      rgba(0, 0, 0, 1) 0px,
-      rgba(0, 0, 0, 1) 220px,
-      rgba(0, 0, 0, 0.4) calc(45% - 30px),
-      rgba(0, 0, 0, 0) calc(15% - 10px)
+      rgba(0, 0, 0, 1)   0%,
+      rgba(0, 0, 0, 1)   40%,
+      rgba(0, 0, 0, 0.4) 60%,
+      rgba(0, 0, 0, 0)   80%
     );
   }
   body.has-qdock .cc-qdock-scrim {
@@ -1680,7 +1696,277 @@
   }
   .cc-modal__btn--primary:hover { background: #4B4FB5; border-color: #4B4FB5; }
 
-  /* Schedule modal — wider to accommodate the per-post preview list. */
+  /* ==================================================================
+     Schedule picker — 516×588 overlay with a month calendar plus hour /
+     minute / AM-PM column scrollers. Matches the provided spec. Opens
+     from "Schedule for later"; on Apply, redistributes post times.
+     ================================================================== */
+  .cc-sched-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.32);
+    /* Higher than any other layer (side-panel is 45, qdock scrim 33,
+       toasts stack around 60) so the picker sits above everything. */
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    animation: ccScrimIn 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .cc-sched-scrim[hidden] { display: none; }
+  .cc-sched {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 516px;
+    height: 588px;
+    background: #FFFFFF;
+    box-shadow: 0 0 72px 4px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    animation: ccModalIn 260ms cubic-bezier(0.3, 0, 0, 1);
+  }
+  .cc-sched__head {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 16px;
+    width: 100%;
+    height: 76px;
+    border-bottom: 1px solid #ECEFF1;
+    flex: 0 0 auto;
+  }
+  .cc-sched__head-copy { display: flex; flex-direction: column; gap: 0; padding-top: 4px; }
+  .cc-sched__title {
+    font-family: var(--font-sans);
+    font-size: 18px; font-weight: 500; line-height: 24px;
+    color: #263238;
+    margin: 0;
+  }
+  .cc-sched__subtitle {
+    font-family: var(--font-sans);
+    font-size: 14px; font-weight: 400; line-height: 28px;
+    letter-spacing: 0.1px;
+    color: #4B5565;
+    margin: 0;
+  }
+  .cc-sched__close {
+    width: 40px; height: 40px;
+    padding: 8px;
+    display: grid; place-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: #9AA4B2;
+    cursor: pointer;
+    transition: background 160ms var(--ease-standard), color 160ms var(--ease-standard);
+  }
+  .cc-sched__close:hover { background: #F5F7FA; color: #263238; }
+  .cc-sched__close svg { width: 20px; height: 20px; }
+
+  .cc-sched__body {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: 516px;
+    height: 440px;
+    flex: 0 0 auto;
+  }
+  .cc-sched__cal {
+    width: 328px;
+    height: 440px;
+    background: #FFFFFF;
+    box-shadow: 0 20px 24px -4px rgba(16, 24, 40, 0.08),
+                0 8px 8px -4px rgba(16, 24, 40, 0.03);
+    box-sizing: border-box;
+  }
+  .cc-sched__cal-content {
+    display: flex; flex-direction: column;
+    padding: 12px 24px 20px;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .cc-sched__cal-month {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%;
+    height: 36px;
+  }
+  .cc-sched__cal-nav {
+    width: 36px; height: 36px;
+    display: grid; place-items: center;
+    background: transparent;
+    border: 0; border-radius: 8px;
+    color: #263238;
+    cursor: pointer;
+    transition: background 160ms var(--ease-standard);
+  }
+  .cc-sched__cal-nav:hover { background: #F5F7FA; }
+  .cc-sched__cal-nav svg { width: 20px; height: 20px; }
+  .cc-sched__cal-month-label {
+    font-family: var(--font-sans);
+    font-size: 16px; font-weight: 500; line-height: 24px;
+    color: #263238;
+    text-align: center;
+    min-width: 100px;
+  }
+  .cc-sched__cal-year {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    padding: 0 6px;
+  }
+  .cc-sched__cal-year > span:first-child {
+    font-family: var(--font-sans);
+    font-size: 15px; font-weight: 500;
+    color: #263238;
+  }
+  .cc-sched__cal-year-btn {
+    font-family: var(--font-sans);
+    font-size: 13px; font-weight: 500;
+    color: #4B5565;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #F5F7FA;
+    cursor: pointer;
+  }
+  .cc-sched__cal-weekhead {
+    display: grid;
+    grid-template-columns: repeat(7, 40px);
+    gap: 0;
+    padding-top: 2px;
+  }
+  .cc-sched__cal-weekhead span {
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: 12px; font-weight: 500;
+    color: #697586;
+    letter-spacing: 0.2px;
+    padding: 4px 0;
+  }
+  .cc-sched__cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 40px);
+    row-gap: 4px;
+  }
+  .cc-sched__cal-cell {
+    width: 40px; height: 40px;
+    border-radius: 9999px;
+    background: transparent;
+    border: 0;
+    display: grid; place-items: center;
+    font-family: var(--font-sans);
+    font-size: 14px; font-weight: 500;
+    color: #263238;
+    cursor: pointer;
+    transition: background 140ms var(--ease-standard);
+    position: relative;
+  }
+  .cc-sched__cal-cell:hover { background: #F5F7FA; }
+  .cc-sched__cal-cell--muted { color: #697586; font-weight: 400; }
+  .cc-sched__cal-cell--today {
+    background: #F9FAFB;
+  }
+  .cc-sched__cal-cell--today::after {
+    content: '';
+    position: absolute;
+    width: 5px; height: 5px;
+    left: calc(50% - 2.5px);
+    bottom: 4px;
+    border-radius: 999px;
+    background: #545BD1;
+  }
+  .cc-sched__cal-cell--selected {
+    background: #545BD1;
+    color: #FFFFFF;
+    font-family: 'Outfit', var(--font-sans);
+  }
+  .cc-sched__cal-cell--selected:hover { background: #4B4FB5; }
+
+  .cc-sched__time {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: 188px;
+    height: 440px;
+    background: #FFFFFF;
+  }
+  .cc-sched__time-col {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px 12px;
+    gap: 4px;
+    width: 60px;
+    height: 440px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    border-right: 1px solid #ECEFF1;
+  }
+  .cc-sched__time-col::-webkit-scrollbar { width: 0; display: none; }
+  .cc-sched__time-col:first-child { border-left: 1px solid #ECEFF1; }
+  .cc-sched__time-col--ap {
+    padding-top: 12px;
+    justify-content: flex-start;
+    height: 440px;
+    overflow: hidden;
+  }
+  .cc-sched__time-cell {
+    display: grid; place-items: center;
+    padding: 8px;
+    width: 44px; height: 44px;
+    background: transparent;
+    border: 0; border-radius: 6px;
+    font-family: var(--font-sans);
+    font-size: 16px; font-weight: 400;
+    color: #4B5565;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 140ms var(--ease-standard), color 140ms var(--ease-standard);
+  }
+  .cc-sched__time-cell:hover { background: #F5F7FA; color: #202939; }
+  .cc-sched__time-cell--active {
+    background: #ECEFF1;
+    color: #202939;
+    font-weight: 500;
+  }
+
+  .cc-sched__foot {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    width: 100%;
+    height: 72px;
+    border-top: 1px solid #ECEFF1;
+    flex: 0 0 auto;
+  }
+  .cc-sched__btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 10px 14px;
+    height: 40px;
+    background: #FFFFFF;
+    border: 0;
+    border-radius: 8px;
+    font-family: var(--font-sans);
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    transition: background 160ms var(--ease-standard);
+  }
+  .cc-sched__btn--ghost { color: #344054; }
+  .cc-sched__btn--ghost:hover { background: #F5F7FA; }
+  .cc-sched__btn--primary {
+    background: #545BD1;
+    color: #FFFFFF;
+  }
+  .cc-sched__btn--primary:hover { background: #4B4FB5; }
+
+  /* ==================================================================
+     Schedule modal — wider to accommodate the per-post preview list.
+     ================================================================== */
   .cc-modal--schedule { width: 540px; position: relative; }
   /* Close X inside the modal — top-right, quiet at rest, dark on hover.
      Only shown on the success view (per creative direction). */
@@ -3306,6 +3592,59 @@
      id doesn't blow up in this prototype. -->
 <div class="footbar" id="cc-footbar" hidden></div>
 
+<!-- Schedule picker overlay — 516×588 card with month calendar + hour +
+     minute + AM/PM columns. Opened when the user clicks "Schedule for
+     later"; on confirm, redistributes the post times starting from the
+     chosen date/time and cadence. -->
+<div class="cc-sched-scrim" id="cc-sched-scrim" hidden>
+  <div class="cc-sched" role="dialog" aria-modal="true" aria-labelledby="cc-sched-title">
+    <header class="cc-sched__head">
+      <div class="cc-sched__head-copy">
+        <h2 class="cc-sched__title" id="cc-sched-title">Select your preferred time</h2>
+        <p class="cc-sched__subtitle">Pick your date and time from calendar &amp; time picker.</p>
+      </div>
+      <button class="cc-sched__close" type="button" id="cc-sched-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+    </header>
+    <div class="cc-sched__body">
+      <div class="cc-sched__cal">
+        <div class="cc-sched__cal-content">
+          <div class="cc-sched__cal-month">
+            <button class="cc-sched__cal-nav" type="button" id="cc-sched-prev" aria-label="Previous month">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>
+            </button>
+            <span class="cc-sched__cal-month-label" id="cc-sched-month">October</span>
+            <button class="cc-sched__cal-nav" type="button" id="cc-sched-next" aria-label="Next month">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+            </button>
+          </div>
+          <div class="cc-sched__cal-year">
+            <span id="cc-sched-year-label">2026</span>
+            <span class="cc-sched__cal-year-btn" role="button" tabindex="0" aria-label="Change year">Year</span>
+          </div>
+          <div class="cc-sched__cal-weekhead">
+            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+          </div>
+          <div class="cc-sched__cal-grid" id="cc-sched-days"></div>
+        </div>
+      </div>
+      <div class="cc-sched__time">
+        <div class="cc-sched__time-col" data-time-col="hour" aria-label="Hour" role="listbox"></div>
+        <div class="cc-sched__time-col" data-time-col="minute" aria-label="Minute" role="listbox"></div>
+        <div class="cc-sched__time-col cc-sched__time-col--ap" data-time-col="ampm" aria-label="AM or PM" role="listbox">
+          <button class="cc-sched__time-cell" type="button" data-ampm="AM">AM</button>
+          <button class="cc-sched__time-cell cc-sched__time-cell--active" type="button" data-ampm="PM">PM</button>
+        </div>
+      </div>
+    </div>
+    <footer class="cc-sched__foot">
+      <button class="cc-sched__btn cc-sched__btn--ghost" type="button" id="cc-sched-cancel">Cancel</button>
+      <button class="cc-sched__btn cc-sched__btn--primary" type="button" id="cc-sched-apply">Apply schedule</button>
+    </footer>
+  </div>
+</div>
+
 <!-- Toast rail — bottom-right stack. -->
 <div class="cc-toasts" id="cc-toasts" aria-live="polite" aria-atomic="false"></div>
 
@@ -4780,12 +5119,18 @@
         if (idx < cards.length - 1) interleaved.push(divider);
       });
 
+      // Preserve scroll position so full re-renders (from renderPostCards)
+      // don't flash the user back to the top. Save the panel body's
+      // scrollTop before, restore after paint.
+      const panelBody = document.querySelector('.side-panel__body') || drafts;
+      const savedScroll = panelBody ? panelBody.scrollTop : 0;
       drafts.innerHTML = interleaved.join('') +
         // Ghost "Add post" card at the bottom of the list.
         '<button class="cc-add-post" type="button" data-cc-add-post>' +
           '<span class="cc-add-post__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>' +
           '<span>Add another post</span>' +
         '</button>';
+      if (panelBody) panelBody.scrollTop = savedScroll;
 
       // Drafting is done — restore the campaign identity on the page
       // heading, and switch the panel count to a settled message.
@@ -4962,7 +5307,7 @@
         if (chatEl) chatEl.classList.remove('is-drop-active');
       }
     });
-    window.addEventListener('drop', (e) => {
+    window.addEventListener('drop', async (e) => {
       if (!e.dataTransfer) return;
       const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
       dragDepth = 0;
@@ -4979,17 +5324,49 @@
         handleImageUpload(images);
         return;
       }
-      // Drafts exist — distribute across empty slots.
+      // Drafts exist — Scout narrates the analysis + distribution.
+      // 1. Announce what was dropped.
+      const nFiles = files.length;
+      const label = nFiles === 1 ? '1 image' : nFiles + ' images';
+      await appendScoutMsg(
+        'Got ' + label + '. Analysing each shot against your post copy, then slotting them in…',
+        { thinkFor: 260, beatAfter: 200 }
+      );
+      // 2. Show action-state receipt so the analysis feels like real work.
+      await appendActionStates([
+        { icon: 'i-search',    text: 'Looking at what each image shows…',
+          short: 'image analysis',
+          detail: 'Read the subject and mood of every dropped file.',
+          hold: 900 },
+        { icon: 'i-analytics', text: 'Matching each image to a post…',
+          short: 'post matching',
+          detail: 'Paired anniversary throwbacks with Post 1, theory carousels with Post 2, etc.',
+          hold: 900 },
+      ]);
+      // 3. Distribute one-by-one so the user can see the sequence.
+      const emptyIdxs = [];
+      postState.forEach((p, i) => { if (p.imageState === 'empty') emptyIdxs.push(i); });
       let applied = 0;
-      for (let i = 0; i < postState.length && applied < files.length; i++) {
-        if (postState[i].imageState === 'empty' || postState[i].imageState === 'ready') {
-          const f = files[applied];
-          applyImageToPost(i, { url: URL.createObjectURL(f), source: 'upload' });
-          applied += 1;
-        }
+      for (let k = 0; k < files.length && applied < emptyIdxs.length; k++) {
+        const idx = emptyIdxs[applied];
+        const f = files[k];
+        applyImageToPost(idx, { url: URL.createObjectURL(f), source: 'upload' });
+        applied += 1;
+        await beat(320);
       }
-      if (applied < files.length) {
-        fireToast({ kind: 'info', title: 'Applied ' + applied + ' of ' + files.length + ' images', desc: 'Ran out of post slots.', duration: 3200 });
+      // 4. Settle: closing narration + toast.
+      if (applied === files.length) {
+        await appendScoutMsg(
+          applied === 1
+            ? 'Slotted it into Post ' + (emptyIdxs[0]+1) + '. Swap or refine any of them from the drafts panel.'
+            : 'Slotted all ' + applied + ' into empty post slots — feel free to swap or refine any from the drafts panel.',
+          { thinkFor: 240, beatAfter: 200 }
+        );
+      } else {
+        await appendScoutMsg(
+          'Placed ' + applied + ' of ' + files.length + ' — the rest didn\'t have empty slots to land in. Delete an image on any card and I\'ll fit them in.',
+          { thinkFor: 260, beatAfter: 240 }
+        );
       }
     });
 
@@ -5694,16 +6071,157 @@
       const later = e.target.closest('[data-cc-schedule-later]');
       const sc = e.target.closest('[data-cc-schedule]');
       if (later) {
-        // "Schedule for later" from the panel toolbar — open the modal and
-        // auto-run the schedule-only path so the user goes straight to the
-        // queuing animation without a second confirmation dialog.
-        openScheduleModal();
-        commitSchedule({ scheduleOnly: true });
+        // "Schedule for later" from the panel toolbar — open the custom
+        // calendar/time picker so the user chooses a start date + time.
+        // On Apply, post times redistribute from that anchor forward.
+        openSchedPicker();
         return;
       }
       if (sc) {
         openScheduleModal();
       }
+    });
+
+    // -----------------------------------------------------------------
+    // Schedule picker — 516×588 calendar + time overlay. Chosen start
+    // date/time seeds a redistribution of post schedules with a fixed
+    // 24-hour cadence (Post 1 at chosen anchor, Post 2 next day, etc.).
+    // -----------------------------------------------------------------
+    const schedScrim   = document.getElementById('cc-sched-scrim');
+    const schedMonthEl = document.getElementById('cc-sched-month');
+    const schedYearEl  = document.getElementById('cc-sched-year-label');
+    const schedDaysEl  = document.getElementById('cc-sched-days');
+    const schedApply   = document.getElementById('cc-sched-apply');
+    const schedCancel  = document.getElementById('cc-sched-cancel');
+    const schedCloseX  = document.getElementById('cc-sched-close');
+    const schedPrev    = document.getElementById('cc-sched-prev');
+    const schedNext    = document.getElementById('cc-sched-next');
+    const schedTimeCols = document.querySelectorAll('.cc-sched__time-col');
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // Anchor month + selection. Real Date is disallowed in workflow scripts
+    // but fine in browser JS — pin to Oct 2026 to match the campaign copy.
+    let schedState = { year: 2026, monthIdx: 9, day: 27, hour: 6, minute: 30, ampm: 'PM' };
+    function buildTimeColumn(col) {
+      const kind = col.dataset.timeCol;
+      if (kind === 'ampm') return; // AM/PM buttons rendered in markup
+      const html = [];
+      if (kind === 'hour') {
+        for (let h = 1; h <= 12; h++) {
+          html.push('<button class="cc-sched__time-cell" type="button" data-hour="' + h + '">' + (h < 10 ? '0' + h : h) + '</button>');
+        }
+      } else if (kind === 'minute') {
+        for (let m = 0; m < 60; m += 5) {
+          html.push('<button class="cc-sched__time-cell" type="button" data-minute="' + m + '">' + (m < 10 ? '0' + m : m) + '</button>');
+        }
+      }
+      col.innerHTML = html.join('');
+    }
+    schedTimeCols.forEach(buildTimeColumn);
+    function renderSchedMonth() {
+      schedMonthEl.textContent = MONTHS[schedState.monthIdx];
+      schedYearEl.textContent = String(schedState.year);
+      // First-of-month day-of-week, days-in-month.
+      const first = new Date(schedState.year, schedState.monthIdx, 1);
+      const firstDow = first.getDay(); // 0=Sun
+      const daysInMonth = new Date(schedState.year, schedState.monthIdx + 1, 0).getDate();
+      const prevMonthDays = new Date(schedState.year, schedState.monthIdx, 0).getDate();
+      const html = [];
+      // Leading muted days from previous month.
+      for (let i = firstDow - 1; i >= 0; i--) {
+        html.push('<button class="cc-sched__cal-cell cc-sched__cal-cell--muted" type="button" disabled>' + (prevMonthDays - i) + '</button>');
+      }
+      // Current month.
+      for (let d = 1; d <= daysInMonth; d++) {
+        const isSelected = (d === schedState.day);
+        const isToday = (schedState.year === 2026 && schedState.monthIdx === 9 && d === 27);
+        const cls = ['cc-sched__cal-cell'];
+        if (isSelected) cls.push('cc-sched__cal-cell--selected');
+        else if (isToday) cls.push('cc-sched__cal-cell--today');
+        html.push('<button class="' + cls.join(' ') + '" type="button" data-day="' + d + '">' + d + '</button>');
+      }
+      // Trailing days from next month to fill grid.
+      const trailing = (7 - ((firstDow + daysInMonth) % 7)) % 7;
+      for (let d = 1; d <= trailing; d++) {
+        html.push('<button class="cc-sched__cal-cell cc-sched__cal-cell--muted" type="button" disabled>' + d + '</button>');
+      }
+      schedDaysEl.innerHTML = html.join('');
+    }
+    function markTimeActive() {
+      document.querySelectorAll('.cc-sched__time-col[data-time-col="hour"] .cc-sched__time-cell').forEach(b => {
+        b.classList.toggle('cc-sched__time-cell--active', Number(b.dataset.hour) === schedState.hour);
+      });
+      document.querySelectorAll('.cc-sched__time-col[data-time-col="minute"] .cc-sched__time-cell').forEach(b => {
+        b.classList.toggle('cc-sched__time-cell--active', Number(b.dataset.minute) === schedState.minute);
+      });
+      document.querySelectorAll('.cc-sched__time-col[data-time-col="ampm"] .cc-sched__time-cell').forEach(b => {
+        b.classList.toggle('cc-sched__time-cell--active', b.dataset.ampm === schedState.ampm);
+      });
+    }
+    function openSchedPicker() {
+      renderSchedMonth();
+      markTimeActive();
+      schedScrim.hidden = false;
+    }
+    function closeSchedPicker() { schedScrim.hidden = true; }
+    schedCancel.addEventListener('click', closeSchedPicker);
+    schedCloseX.addEventListener('click', closeSchedPicker);
+    schedScrim.addEventListener('click', (e) => { if (e.target === schedScrim) closeSchedPicker(); });
+    schedPrev.addEventListener('click', () => {
+      schedState.monthIdx -= 1;
+      if (schedState.monthIdx < 0) { schedState.monthIdx = 11; schedState.year -= 1; }
+      renderSchedMonth();
+    });
+    schedNext.addEventListener('click', () => {
+      schedState.monthIdx += 1;
+      if (schedState.monthIdx > 11) { schedState.monthIdx = 0; schedState.year += 1; }
+      renderSchedMonth();
+    });
+    schedDaysEl.addEventListener('click', (e) => {
+      const cell = e.target.closest('.cc-sched__cal-cell[data-day]');
+      if (!cell) return;
+      schedState.day = Number(cell.dataset.day);
+      renderSchedMonth();
+    });
+    document.querySelectorAll('.cc-sched__time-col').forEach(col => {
+      col.addEventListener('click', (e) => {
+        const cell = e.target.closest('.cc-sched__time-cell');
+        if (!cell) return;
+        if (cell.dataset.hour) schedState.hour = Number(cell.dataset.hour);
+        if (cell.dataset.minute) schedState.minute = Number(cell.dataset.minute);
+        if (cell.dataset.ampm) schedState.ampm = cell.dataset.ampm;
+        markTimeActive();
+      });
+    });
+    schedApply.addEventListener('click', () => {
+      // Redistribute post schedules from the chosen anchor forward, one
+      // per day at the same time. Update UI in place — no re-render.
+      const anchor = new Date(schedState.year, schedState.monthIdx, schedState.day);
+      let displayHour = schedState.hour;
+      if (schedState.ampm === 'PM' && displayHour !== 12) displayHour += 12;
+      if (schedState.ampm === 'AM' && displayHour === 12) displayHour = 0;
+      const hour12 = schedState.hour;
+      const time = hour12 + ':' + (schedState.minute < 10 ? '0' + schedState.minute : schedState.minute) + ' ' + schedState.ampm;
+      postState.forEach((p, i) => {
+        const d = new Date(anchor);
+        d.setDate(d.getDate() + i);
+        p.day = DAY_NAMES[d.getDay()] + ', ' + time;
+      });
+      // Update each visible post card's time pill in place.
+      document.querySelectorAll('.cc-postcard[data-post-idx]').forEach((card) => {
+        const idx = Number(card.dataset.postIdx);
+        const st = postState[idx];
+        if (!st) return;
+        const label = card.querySelector('[data-post-time-val]');
+        if (label) label.textContent = st.day;
+      });
+      closeSchedPicker();
+      fireToast({
+        kind: 'success',
+        title: 'Schedule applied',
+        desc: 'Post 1 starts ' + DAY_NAMES[anchor.getDay()] + ', ' + MONTHS[schedState.monthIdx].slice(0,3) + ' ' + schedState.day + ' at ' + time + '.',
+        duration: 3800,
+      });
     });
 
     // -----------------------------------------------------------------
