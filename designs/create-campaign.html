@@ -41,6 +41,26 @@
     visibility: hidden;
     pointer-events: none;
   }
+  /* Creation-flow landing atmosphere. The shared Campaigns blobs were
+     pooling too much color in the bottom-left corner, so this page keeps
+     the glow lower and softer while preserving a little depth on entry. */
+  body.mode-campaigns .atmosphere__blob--violet {
+    width: 520px;
+    height: 520px;
+    left: -260px;
+    bottom: -310px;
+    background: oklch(0.84 0.08 292 / 0.48);
+    filter: blur(150px);
+  }
+  body.mode-campaigns .atmosphere__blob--indigo {
+    width: 420px;
+    height: 420px;
+    left: -70px;
+    bottom: -300px;
+    background: oklch(0.56 0.16 282 / 0.14);
+    opacity: 1;
+    filter: blur(170px);
+  }
   /* Keep the conversation canvas transparent so the Campaigns dashboard
      atmosphere runs continuously behind the create flow instead of
      appearing as a clipped rectangle inside the main column. */
