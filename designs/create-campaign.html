@@ -3466,26 +3466,107 @@
   }
   body.is-drop-active .cc-chat-dropcue { display: block; }
 
-  /* One-line playback summary — Turn 4 final confirmation. */
+  /* Campaign brief playback, Turn 4 final confirmation. */
   .cc-playback {
-    margin: 6px 0 12px 40px;
-    padding: 14px 18px;
-    background: linear-gradient(180deg, rgba(124, 58, 237, 0.05), rgba(124, 58, 237, 0.02));
-    border: 1px solid rgba(124, 58, 237, 0.16);
-    border-radius: 12px;
-    font-size: 13.5px;
-    line-height: 1.55;
-    color: #2a2a3f;
-    max-width: 640px;
+    margin: 8px 0 16px 40px;
+    padding: 18px 20px 16px;
+    background:
+      linear-gradient(180deg, rgba(246, 247, 255, 0.98), rgba(251, 252, 255, 0.98));
+    border: 1px solid rgba(84, 91, 209, 0.22);
+    border-radius: 14px;
+    color: var(--camp-text-primary, #263238);
+    max-width: 660px;
+    box-shadow: 0 16px 36px rgba(22, 27, 85, 0.08);
     animation: ccActionsReceiptIn 380ms cubic-bezier(0.4,0,0.2,1) both;
   }
-  .cc-playback strong {
-    color: var(--camp-primary, #4A50AA);
-    font-weight: 600;
+  .cc-playback__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: start;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(84, 91, 209, 0.12);
   }
-  .cc-playback__sep {
-    color: #b6b6c8;
-    margin: 0 4px;
+  .cc-playback__eyebrow {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--camp-text-tertiary, #98A2B3);
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.72px;
+    line-height: 14px;
+    text-transform: uppercase;
+  }
+  .cc-playback__title {
+    display: block;
+    color: var(--camp-text-primary, #263238);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 22px;
+    letter-spacing: 0;
+  }
+  .cc-playback__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 9px;
+    border: 1px solid rgba(84, 91, 209, 0.14);
+    border-radius: 999px;
+    background: rgba(84, 91, 209, 0.07);
+    color: var(--camp-primary, #545BD1);
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 14px;
+    white-space: nowrap;
+  }
+  .cc-playback__badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 0 4px rgba(84, 91, 209, 0.12);
+  }
+  .cc-playback__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 22px;
+    row-gap: 0;
+    padding-top: 6px;
+  }
+  .cc-playback__item {
+    min-width: 0;
+    padding: 12px 0 2px;
+  }
+  .cc-playback__label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--camp-text-tertiary, #98A2B3);
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.68px;
+    line-height: 13px;
+    text-transform: uppercase;
+  }
+  .cc-playback__value {
+    display: block;
+    color: var(--camp-text-secondary, #4A5568);
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 19px;
+  }
+  @media (max-width: 760px) {
+    .cc-playback {
+      margin-left: 0;
+      max-width: none;
+    }
+    .cc-playback__head,
+    .cc-playback__grid {
+      grid-template-columns: 1fr;
+    }
+    .cc-playback__badge {
+      justify-self: start;
+    }
   }
 
 </style>
@@ -7044,30 +7125,46 @@
       }
 
       // ---------------------------------------------------------------
-      // TURN 4 — Final one-line playback before generate.
+      // TURN 4 — Final campaign brief before generate.
       //
-      // No plan card here — just a single sentence that reads back the
-      // whole thing so the user sees exactly what's about to ship.
+      // A compact structured card gives the final confirmation more
+      // weight and makes each campaign decision easy to scan.
       // ---------------------------------------------------------------
       const pv = plan.readValues();
       const angleShort = (pv['Angle'] || '1989 anniversary — countdown + fan memories').replace(/["']/g, '');
       await appendScoutMsg("Here's the shape we landed on:", { thinkFor: 300, beatAfter: 260 });
 
       const playback = el('div', 'cc-playback',
-        '<strong></strong>' +
-        '<span class="cc-playback__sep"> · </span>' +
-        '<span class="cc-playback__part cc-playback__part--goal"></span>' +
-        '<span class="cc-playback__sep"> · </span>' +
-        '<span class="cc-playback__part cc-playback__part--offer"></span>' +
-        '<span class="cc-playback__sep"> · </span>' +
-        '<span class="cc-playback__part cc-playback__part--channels"></span>' +
-        '<span class="cc-playback__sep"> · </span>' +
-        '<span class="cc-playback__part cc-playback__part--timing"></span>'
+        '<div class="cc-playback__head">' +
+          '<div>' +
+            '<span class="cc-playback__eyebrow">Campaign brief</span>' +
+            '<strong class="cc-playback__title"></strong>' +
+          '</div>' +
+          '<span class="cc-playback__badge">Ready to draft</span>' +
+        '</div>' +
+        '<div class="cc-playback__grid">' +
+          '<div class="cc-playback__item">' +
+            '<span class="cc-playback__label">Goal</span>' +
+            '<span class="cc-playback__value cc-playback__part--goal"></span>' +
+          '</div>' +
+          '<div class="cc-playback__item">' +
+            '<span class="cc-playback__label">Opening hook</span>' +
+            '<span class="cc-playback__value cc-playback__part--offer"></span>' +
+          '</div>' +
+          '<div class="cc-playback__item">' +
+            '<span class="cc-playback__label">Posts</span>' +
+            '<span class="cc-playback__value cc-playback__part--channels"></span>' +
+          '</div>' +
+          '<div class="cc-playback__item">' +
+            '<span class="cc-playback__label">Timing</span>' +
+            '<span class="cc-playback__value cc-playback__part--timing"></span>' +
+          '</div>' +
+        '</div>'
       );
-      playback.querySelector('strong').textContent = angleShort;
-      playback.querySelector('.cc-playback__part--goal').textContent = 'reach-focused';
+      playback.querySelector('.cc-playback__title').textContent = angleShort;
+      playback.querySelector('.cc-playback__part--goal').textContent = 'Reach-focused, built for saves and replies';
       playback.querySelector('.cc-playback__part--offer').textContent = offerValue;
-      playback.querySelector('.cc-playback__part--channels').textContent = '4 posts across Instagram + TikTok';
+      playback.querySelector('.cc-playback__part--channels').textContent = '4 drafts across Instagram and TikTok';
       playback.querySelector('.cc-playback__part--timing').textContent = timingValue.toLowerCase();
       chatlog.appendChild(playback);
       scrollDown();
