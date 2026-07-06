@@ -7233,6 +7233,11 @@ body.mode-campaigns #view-campaigns {
   border-color: var(--camp-status-review-bd);
   color: var(--camp-status-review-fg);
 }
+.camp-status--scheduled {
+  background: var(--camp-status-progress-bg);
+  border-color: var(--camp-status-progress-bd);
+  color: var(--camp-status-progress-fg);
+}
 .camp-status--published {
   background: var(--camp-status-published-bg);
   border-color: var(--camp-status-published-bd);

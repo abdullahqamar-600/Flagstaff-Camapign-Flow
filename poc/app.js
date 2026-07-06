@@ -3614,6 +3614,7 @@ const CAMPAIGN_STATUSES = [
   { id: 'all',      label: 'All' },
   { id: 'review',   label: 'In Review' },
   { id: 'draft',    label: 'In Draft' },
+  { id: 'scheduled',label: 'Scheduled' },
   { id: 'published',label: 'Published' },
   { id: 'progress', label: 'In Progress' },
   { id: 'revision', label: 'Revision Requested' },
@@ -3626,103 +3627,142 @@ const CAMPAIGN_STATUSES = [
    the Phase-1 curated fields that carry forward into "up next" cards. */
 const DEMO_CAMPAIGNS = [
   {
-    id: 'lawn-rush-week',
-    title: 'Lawn Rush Week',
-    description: 'A 7 day sprint hitting the heatwave window. Q&A openers, first person warm. 3 of 4 posts scheduled.',
+    id: 'track-5-theory-sprint',
+    title: 'Track 5 Theory Sprint',
+    description: 'A 4 post theory build riding this week’s Track 5 chatter. Carousel first, poll next, anniversary tie-in queued.',
     status: 'progress',
     state:  'live',
-    startDate: '07 May 2026',
-    endDate:   '15 May 2026',
+    startDate: '22 Oct 2026',
+    endDate:   '27 Oct 2026',
     postCount: 4,
-    commentCount: 12,
-    author: 'Amira Rehman',
-    createdAt: 'Created 04 May',
+    commentCount: 28,
+    author: 'Swiftie Central',
+    createdAt: 'Created 21 Oct',
     live: {
-      reach:     '14.2k',
-      replies:   '128',
-      nextPost:  'Tue 10am',
-      nextIn:    'in 3h',
-      lift:      '2.4× baseline',
+      reach:     '48.7k',
+      replies:   '612',
+      nextPost:  'Thu 7pm',
+      nextIn:    'in 5h',
+      lift:      '3.4× baseline',
     },
   },
   {
-    id: 'heatwave-sale',
-    title: 'Heatwave ready Sale Sprint',
-    description: '5 day heatwave forecast starting Mon. Question openers on Tue/Thu, matching your top summer cadence.',
+    id: '1989-anniversary-week',
+    title: '1989 Anniversary Week',
+    description: 'A 5 post anniversary countdown landing on Oct 27. Throwbacks, easter eggs, fan memories, and one debate-driving poll.',
     status: 'review',
     state:  'upcoming',
-    leadAxis: 'reactive',
-    source:   'the incoming heatwave on 17 Jun 2026',
-    banner:   'Based on what’s trending right now — the upcoming heatwave on 17 Jun 2026.',
-    fact:     'A 5 day heatwave lands 17 Jun 2026.',
-    move:     'Front runs it in your top summer cadence.',
-    startDate: '15 Jun 2026',
-    endDate:   '22 Jun 2026',
-    postCount: 4,
+    leadAxis: 'event',
+    source:   'the upcoming 1989 anniversary on Oct 27',
+    banner:   'Based on the upcoming 1989 anniversary on Oct 27.',
+    fact:     'The 1989 anniversary lands Oct 27, and your anniversary throwbacks are consistently your highest-reach content.',
+    move:     'Turns the event into a 5-post countdown across your strongest Swiftie formats.',
+    startDate: '23 Oct 2026',
+    endDate:   '27 Oct 2026',
+    postCount: 5,
     commentCount: 0,
     author: 'Scout · curated',
     createdAt: 'Refreshed 4h ago',
   },
   {
-    id: 'craftsperson-r2',
-    title: 'Craftsperson Spotlight, round 2',
-    description: 'Your March spotlight hit 2.1× replies. Two artisans in your KB haven’t been featured. Worth a second pass.',
+    id: 'rank-the-eras-r2',
+    title: 'Rank the Eras Poll, round 2',
+    description: 'Your last eras ranking poll hit 4.1× replies. A tighter bracket format brings the debate back before anniversary week.',
     status: 'review',
     state:  'upcoming',
     leadAxis: 'pattern-echo',
-    source:   'your top performer ‘Craftsperson Spotlight’',
-    banner:   'Based on your top performing campaign, ‘Craftsperson Spotlight.’',
-    fact:     'Your March spotlight hit 2.1× replies.',
-    move:     'Same shape, on the 2 artisans still unfeatured.',
-    startDate: '02 Jun 2026',
-    endDate:   '16 Jun 2026',
-    postCount: 3,
+    source:   'your top performer ‘Rank the eras poll’',
+    banner:   'Based on your top performing campaign, ‘Rank the eras poll.’',
+    fact:     'Your last eras ranking poll was your top-commented post this year at 4.1× your usual replies.',
+    move:     'Replays the debate format with a cleaner bracket and a finals post.',
+    startDate: '18 Oct 2026',
+    endDate:   '24 Oct 2026',
+    postCount: 4,
     commentCount: 0,
     author: 'Scout · curated',
     createdAt: 'Refreshed 2d ago',
   },
   {
-    id: 'ai-first-saas',
-    title: 'AI First SaaS Design Sprint',
-    description: 'Positioning the launch as "don’t retrofit, rebuild." Thread first, contrarian, one anchor post pulling it together.',
+    id: 'cornelia-street-clues',
+    title: 'Cornelia Street Clues',
+    description: 'A theory carousel opening on the lyric thread fans keep reviving. Saves first, comments second.',
     status: 'draft',
     state:  'other',
-    startDate: '20 May 2026',
-    endDate:   '03 Jun 2026',
-    postCount: 6,
+    startDate: '20 Oct 2026',
+    endDate:   '24 Oct 2026',
+    postCount: 4,
     commentCount: 4,
-    author: 'Kai Malone',
-    createdAt: 'Created 12 May',
+    author: 'Swiftie Central',
+    createdAt: 'Created 12 Oct',
   },
   {
-    id: 'community-qa',
-    title: 'Community Q&A Fridays',
-    description: 'Weekly cadence, one open question per Friday. Simple, low lift, high reply. Runs on autopilot once approved.',
+    id: 'friendship-bracelet-friday',
+    title: 'Friendship Bracelet Friday',
+    description: 'Weekly fan prompt series. Low lift, high replies, designed to collect stories and repostable UGC.',
     status: 'review',
     state:  'other',
     startDate: 'Ongoing',
     endDate:   '',
     postCount: 8,
     commentCount: 6,
-    author: 'Priya Iyer',
-    createdAt: 'Created 02 May',
+    author: 'Swiftie Central',
+    createdAt: 'Created 02 Oct',
   },
   {
-    id: 'craftsperson-r1',
-    title: 'Craftsperson Spotlight',
-    description: 'Round one of the March pattern that hit 2.1× replies. Two new artisans, longer threads, warm openers.',
+    id: 'rank-the-eras-r1',
+    title: 'Rank the Eras Poll',
+    description: 'The original bracket-style poll that turned era loyalty into a comments thread. Still the account’s top reply driver.',
     status: 'published',
     state:  'other',
-    startDate: '12 Apr 2026',
-    endDate:   '26 Apr 2026',
-    postCount: 3,
-    commentCount: 41,
-    author: 'Amira Rehman',
-    createdAt: 'Created 08 Apr',
+    startDate: '12 Sep 2026',
+    endDate:   '19 Sep 2026',
+    postCount: 4,
+    commentCount: 89,
+    author: 'Swiftie Central',
+    createdAt: 'Created 08 Sep',
   },
 ];
 
 const campaignsState = { filter: 'all' };
+
+function normalizeCampaignTitle(title) {
+  return String(title || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function applyGeneratedCampaignPostback(params = new URLSearchParams(location.search)) {
+  const postedId = params.get('campaign-posted');
+  if (!postedId) return;
+  const title = params.get('campaign-title') || 'New campaign';
+  const postCount = Number(params.get('campaign-posts')) || 4;
+  const startDate = params.get('campaign-start') || 'Thu, 7:00 PM';
+  const endDate = params.get('campaign-end') || 'Sun, 12:00 PM';
+  const titleKey = normalizeCampaignTitle(title);
+  const posted = DEMO_CAMPAIGNS.find(c =>
+    c.id === postedId || normalizeCampaignTitle(c.title) === titleKey
+  );
+  const generatedCampaign = {
+    id: postedId,
+    title,
+    description: 'A ' + postCount + ' post campaign generated by Scout and queued for @swiftie.central.',
+    status: 'scheduled',
+    state: 'other',
+    startDate,
+    endDate,
+    postCount,
+    commentCount: 0,
+    author: 'Swiftie Central',
+    createdAt: 'Generated just now',
+  };
+  if (posted) {
+    Object.assign(posted, generatedCampaign, { id: posted.id });
+  } else {
+    DEMO_CAMPAIGNS.unshift(generatedCampaign);
+  }
+  campaignsState.filter = 'all';
+}
 
 function statusMeta(id) {
   return CAMPAIGN_STATUSES.find(s => s.id === id) || CAMPAIGN_STATUSES[0];
@@ -3901,13 +3941,13 @@ function buildScoutNote() {
   // narrative priority: past performer first (grounds trust), then reactive
   // (what's coming), then experiment (a swing). Campaigns without a source
   // are skipped so the note stays honest to what Scout can actually cite.
-  const axisOrder = { 'pattern-echo': 0, reactive: 1, experiment: 2 };
+  const axisOrder = { 'pattern-echo': 0, event: 1, reactive: 2, experiment: 3 };
   const sources = upcoming
     .slice()
     .sort((a, b) => (axisOrder[a.leadAxis] ?? 9) - (axisOrder[b.leadAxis] ?? 9))
     .map(c => c.source)
     .filter(Boolean);
-  const utterance = "I’ve curated " + n + " campaigns based on " + joinPhrases(sources) + ".";
+  const utterance = "I’ve curated " + n + " campaign" + (n === 1 ? '' : 's') + " based on " + joinPhrases(sources) + ".";
 
   const line = scoutWords(utterance, 0);
   // Tag the last word with `w--last` — its ::after caret gets the extended
@@ -3938,6 +3978,7 @@ function buildScoutNote() {
 
 function leadAxisLabel(axis) {
   switch (axis) {
+    case 'event':        return 'Event';
     case 'reactive':     return 'Reactive';
     case 'pattern-echo': return 'Pattern-echo';
     case 'experiment':   return 'Experiment';
@@ -3956,7 +3997,7 @@ function openScoutRationale(campaigns) {
   // Sort by narrative priority so the card order matches the note's ordering
   // (past performer first — grounds trust — then the reactive signal, then
   // any experimental swing).
-  const axisOrder = { 'pattern-echo': 0, reactive: 1, experiment: 2 };
+  const axisOrder = { 'pattern-echo': 0, event: 1, reactive: 2, experiment: 3 };
   const sorted = campaigns.slice().sort(
     (a, b) => (axisOrder[a.leadAxis] ?? 9) - (axisOrder[b.leadAxis] ?? 9)
   );
@@ -3987,7 +4028,8 @@ function openScoutRationale(campaigns) {
     // user sees why this campaign exists before shaping it further.
     // Axis → shape mapping keeps the deep-link aligned with the closest
     // existing SHAPES entry in create-campaign.html.
-    const shapeForAxis = axis === 'reactive' ? 'trend'
+    const shapeForAxis = axis === 'event' ? 'holiday'
+                       : axis === 'reactive' ? 'trend'
                        : axis === 'pattern-echo' ? 'success'
                        : axis === 'experiment' ? 'custom'
                        : 'holiday';
@@ -4107,7 +4149,7 @@ function buildCampaignsView() {
     el('div', { class: 'campaigns__actions' }, [
       el('button', { class: 'acct-switch', type: 'button' }, [
         el('span', { class: 'acct-switch__x', html: icon('i-x-logo') }),
-        el('span', { class: 'acct-switch__name' }, 'AbdullahQ420'),
+        el('span', { class: 'acct-switch__name' }, '@swiftie.central'),
         el('span', { class: 'acct-switch__chev', html: icon('i-chevron-down') }),
       ]),
       el('button', {
@@ -4176,6 +4218,7 @@ function enterPanelMode() {
 }
 
 function goToCampaigns() {
+  applyGeneratedCampaignPostback();
   enterPanelMode();
   showView('view-campaigns');
   setCrumbs(['Home', 'Campaigns']);
@@ -4198,23 +4241,23 @@ function goToHome() {
    ========================================================================= */
 
 const HOME_STATS = [
-  { label: 'Active campaigns',   value: '2',    delta: '+1 this week',     tone: 'draft' },
-  { label: 'Posts scheduled',    value: '14',   delta: 'Next: today · 6 PM', tone: 'progress' },
-  { label: 'Pending review',     value: '5',    delta: 'Oldest: 2 days',     tone: 'review' },
-  { label: 'Published (30d)',    value: '31',   delta: '+9 vs. prior 30d',   tone: 'published' },
+  { label: 'Active campaigns',   value: '2',    delta: '+1 this week',      tone: 'draft' },
+  { label: 'Posts scheduled',    value: '13',   delta: 'Next: Thu · 7 PM',  tone: 'progress' },
+  { label: 'Pending review',     value: '4',    delta: 'Oldest: 2 days',    tone: 'review' },
+  { label: 'Published (30d)',    value: '28',   delta: '+11 vs. prior 30d', tone: 'published' },
 ];
 
 const HOME_ACTIVITY = [
-  { who: 'Scout',      what: 'drafted 3 new post variants for',   subject: 'AI First SaaS Design Sprint', when: '12 min ago' },
-  { who: 'AbdullahQ420', what: 'moved',                            subject: 'Lawn Rush Week to In Review', when: '2 hr ago' },
-  { who: 'Scout',      what: 'suggested a new campaign angle:',   subject: 'Heritage Week × Youth voices', when: 'Yesterday' },
-  { who: 'AbdullahQ420', what: 'published',                        subject: 'Ramadan pre tease post',      when: '2 days ago' },
+  { who: 'Scout',            what: 'curated a countdown for',        subject: '1989 Anniversary Week',       when: '12 min ago' },
+  { who: 'Swiftie Central',  what: 'moved',                          subject: 'Track 5 Theory Sprint to In Progress', when: '2 hr ago' },
+  { who: 'Scout',            what: 'replayed a winning format:',     subject: 'Rank the Eras Poll, round 2',  when: 'Yesterday' },
+  { who: 'Swiftie Central',  what: 'published',                      subject: 'Cornelia Street clues post',   when: '2 days ago' },
 ];
 
 const HOME_SUGGESTIONS = [
-  { title: 'Refresh your peak windows',    body: 'Your last 5 posts landed 22% below your usual reach. Scout has 3 window options ready.', cta: 'See options' },
-  { title: 'A campaign brief is stale',    body: '"Lawn Rush Week" was drafted 6 days ago and still awaits review. Reviewers are AbdullahQ420.', cta: 'Open brief' },
-  { title: 'Try a new angle for design leads', body: 'Scout drafted a "day in the life" thread for the Designers & PMs cohort, three variants.', cta: 'Read draft' },
+  { title: 'Build toward Oct 27', body: 'The 1989 anniversary is coming up. Scout has a 5-post countdown ready from your top-reach anniversary pattern.', cta: 'Review draft' },
+  { title: 'Replay your reply winner', body: '"Rank the eras poll" pulled 4.1× your usual replies. Scout rebuilt it as a tighter bracket for this week.', cta: 'Open brief' },
+  { title: 'Use the Track 5 chatter', body: '"Track 5" mentions are up 3.4× in your fandom lane. Scout drafted a theory carousel while the thread is active.', cta: 'Read draft' },
 ];
 
 function buildHomeView() {
@@ -4231,7 +4274,7 @@ function buildHomeView() {
     el('div', { class: 'campaigns__actions' }, [
       el('button', { class: 'acct-switch', type: 'button' }, [
         el('span', { class: 'acct-switch__x', html: icon('i-x-logo') }),
-        el('span', { class: 'acct-switch__name' }, 'AbdullahQ420'),
+        el('span', { class: 'acct-switch__name' }, '@swiftie.central'),
         el('span', { class: 'acct-switch__chev', html: icon('i-chevron-down') }),
       ]),
       el('button', {
@@ -4322,8 +4365,8 @@ const SCOUT_PHASES = {
   // under #view-scout-p1 — no fetch needed. `inline: true` tells goToScout()
   // to skip loadScoutPanel() for this phase.
   p1:          { file: 'phase-1-curated',   view: 'view-scout-p1',       crumbs: ['Home', 'Campaigns', 'New'], inline: true },
-  p2:          { file: 'phase-2-review',    view: 'view-scout-p2',       crumbs: ['Home', 'Campaigns', 'Heatwave ready Sale Sprint'] },
-  p25:         { file: 'phase-2-5-inflight',view: 'view-scout-p2-5',     crumbs: ['Home', 'Campaigns', 'Heatwave ready Sale Sprint'] },
+  p2:          { file: 'phase-2-review',    view: 'view-scout-p2',       crumbs: ['Home', 'Campaigns', '1989 Anniversary Week'] },
+  p25:         { file: 'phase-2-5-inflight',view: 'view-scout-p2-5',     crumbs: ['Home', 'Campaigns', '1989 Anniversary Week'] },
   p3:          { file: 'phase-3-home',      view: 'view-scout-p3',       crumbs: ['Home'] },
   kb:          { file: 'kb-drawer',         view: 'view-scout-kb',       crumbs: ['Home', 'Campaigns', 'Knowledge base'] },
   failures:    { file: 'failure-modes',     view: 'view-scout-failures', crumbs: ['Home', 'Campaigns', 'Failure modes'] },

@@ -639,6 +639,41 @@
     letter-spacing: 0;
     box-shadow: none;
   }
+  body.has-drafts .cc-main .chatmsg--post-instruction {
+    align-self: stretch;
+    max-width: 100%;
+  }
+  body.has-drafts .cc-main .chatmsg--post-instruction .chatmsg__bubble {
+    width: 100%;
+    border: 1px solid rgba(84, 91, 209, 0.16);
+    background: #F7F7FF;
+  }
+  .chatmsg__post-context {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    color: var(--camp-primary, #545BD1);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 14px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .chatmsg__post-context::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.72;
+  }
+  .chatmsg__post-text {
+    display: block;
+    font-size: 14px;
+    line-height: 20px;
+    color: #263238;
+  }
   /* Scout responses in the card get a bordered surface — reads like a
      versioned response block, not free-flowing chat. */
   body.has-drafts .cc-main .chatmsg--scout {
@@ -1130,6 +1165,10 @@
     transition: box-shadow 200ms var(--ease-standard), border-color 200ms var(--ease-standard);
     animation: ccCardIn 360ms var(--ease-emphasized) both;
   }
+  .cc-postcard.is-ai-processing {
+    border-color: rgba(84, 91, 209, 0.34);
+    box-shadow: 0 0 0 3px rgba(84, 91, 209, 0.08);
+  }
   /* When a comment sheet is open the card grows — release the clamp so
      the sheet is not cropped by min-height and overflow hidden. */
   .cc-postcard.is-commenting {
@@ -1237,25 +1276,40 @@
   .cc-postcard__minus:hover { background: var(--camp-surface-hover); color: var(--camp-text-primary); }
   .cc-postcard__minus svg { width: 18px; height: 18px; }
 
-  /* Split top-right actions — duplicate + delete replace the old kebab.
-     Two 26px targets, quiet at rest, distinct on hover: duplicate lifts
-     indigo, delete flushes red so destructive intent reads clearly. */
-  .cc-postcard__act {
-    width: 26px; height: 26px;
-    border: none; background: transparent;
-    color: #9AA4B2;
+  /* Split top-right actions — copy post + remove post. These are separate
+     from the older footer .cc-postcard__act pills so the head controls stay
+     compact, icon-only, and clearly tied to the current post. */
+  .cc-postcard__head-action {
+    width: 28px; height: 28px;
+    border: 1px solid var(--camp-border-hairline, #E4E7EC);
+    background: rgba(255, 255, 255, 0.72);
+    color: #8A94A6;
     cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 6px;
-    transition: background 160ms var(--ease-standard), color 160ms var(--ease-standard);
+    border-radius: 999px;
+    transition:
+      background 160ms var(--ease-standard),
+      border-color 160ms var(--ease-standard),
+      color 160ms var(--ease-standard),
+      transform 160ms var(--ease-standard);
   }
-  .cc-postcard__act svg { width: 16px; height: 16px; }
-  .cc-postcard__act--duplicate:hover {
+  .cc-postcard__head-action svg {
+    width: 16px; height: 16px;
+    stroke-width: 1.9;
+  }
+  .cc-postcard__head-action:hover { transform: translateY(-1px); }
+  .cc-postcard__head-action:focus-visible {
+    outline: 2px solid rgba(84, 91, 209, 0.22);
+    outline-offset: 2px;
+  }
+  .cc-postcard__head-action--duplicate:hover {
     background: var(--camp-primary-tint, #EEF0FF);
+    border-color: rgba(84, 91, 209, 0.22);
     color: var(--camp-primary, #545BD1);
   }
-  .cc-postcard__act--delete:hover {
-    background: #FEECEC;
+  .cc-postcard__head-action--delete:hover {
+    background: #FFF1F0;
+    border-color: #FDA29B;
     color: #D92D20;
   }
 
@@ -1304,6 +1358,8 @@
     border-radius: 8px;
     cursor: text;
     transition: background 140ms var(--ease-standard), box-shadow 140ms var(--ease-standard);
+    user-select: text;
+    -webkit-user-select: text;
   }
   .cc-postcard__text:hover,
   .cc-postcard__text:focus-visible {
@@ -1312,6 +1368,28 @@
   }
   .cc-postcard__text:focus-visible {
     box-shadow: inset 0 0 0 1.5px rgba(84, 91, 209, 0.35);
+  }
+  .cc-postcard__text[contenteditable="true"]:focus,
+  .cc-postcard__text.is-editing {
+    background: #FFFFFF;
+    box-shadow: inset 0 0 0 1.5px rgba(84, 91, 209, 0.35), 0 8px 20px rgba(15, 23, 42, 0.08);
+    position: relative;
+    z-index: 2;
+  }
+  .cc-postcard__text.is-editing::before {
+    content: "Editing";
+    position: absolute;
+    right: 8px;
+    bottom: -18px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--camp-primary-tint, #EEF0FF);
+    color: var(--camp-primary, #545BD1);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 12px;
+    letter-spacing: 0.2px;
+    pointer-events: none;
   }
   .cc-postcard__hook {
     font-size: 14.5px;
@@ -1333,6 +1411,18 @@
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
+  }
+  .cc-postcard__body-row .cc-postcard__text[contenteditable="true"]:focus {
+    display: block;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: initial;
+    overflow: visible;
+  }
+  .cc-postcard__body-row .cc-postcard__text.is-editing {
+    display: block;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: initial;
+    overflow: visible;
   }
 
   /* Bottom row: schedule + attachments on the left, arrow-up-right on the right. */
@@ -1999,9 +2089,22 @@
   .cc-sched__btn--primary:hover { background: #4B4FB5; }
 
   /* ==================================================================
-     Schedule modal — wider to accommodate the per-post preview list.
+     Schedule modal — quiet review sheet for the upcoming campaign posts.
      ================================================================== */
-  .cc-modal--schedule { width: 540px; position: relative; }
+  .cc-modal--schedule {
+    width: 500px;
+    position: relative;
+    padding: 28px;
+  }
+  .cc-modal--schedule .cc-modal__title {
+    text-align: left;
+    margin-bottom: 6px;
+  }
+  .cc-modal--schedule .cc-modal__desc {
+    text-align: left;
+    margin-bottom: 22px;
+  }
+  .cc-schedule-view--confirm .cc-modal__hero { display: none; }
   /* Close X inside the modal — top-right, quiet at rest, dark on hover.
      Only shown on the success view (per creative direction). */
   .cc-modal__close {
@@ -2020,53 +2123,42 @@
   .cc-modal__close:hover { background: rgba(15, 23, 42, 0.05); color: #101828; }
   .cc-modal__close svg { width: 18px; height: 18px; }
   .cc-schedule-list {
-    display: flex; flex-direction: column; gap: 6px;
-    margin: 0 0 16px 0;
+    display: flex; flex-direction: column;
+    margin: 0 0 22px 0;
     max-height: 220px;
     overflow-y: auto;
+    border-top: 1px solid var(--camp-border-hairline, #E4E7EC);
+    border-bottom: 1px solid var(--camp-border-hairline, #E4E7EC);
   }
   .cc-schedule-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 12px;
-    background: #F8FAFC;
-    border-radius: 10px;
-    border: 1px solid rgba(228, 231, 236, 0.7);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(228, 231, 236, 0.72);
   }
-  .cc-schedule-row__num {
-    flex: 0 0 auto;
-    padding: 3px 8px;
-    background: #EEF0FF;
-    color: var(--indigo-500, #3C4194);
-    font-size: 11px; font-weight: 600;
-    letter-spacing: 0.3px;
-    border-radius: 999px;
-    min-width: 44px; text-align: center;
+  .cc-schedule-row:last-child {
+    border-bottom: 0;
   }
   .cc-schedule-row__hook {
-    flex: 1;
-    font-size: 13px; font-weight: 500;
+    min-width: 0;
+    font-size: 14px; font-weight: 500;
     color: var(--camp-text-primary);
-    line-height: 18px;
+    line-height: 19px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .cc-schedule-row__time {
-    flex: 0 0 auto;
-    display: inline-flex; align-items: center; gap: 6px;
-    color: #4E4E50;
+    color: var(--camp-text-tertiary, #98A2B3);
     font-family: 'Outfit', var(--font-sans);
-    font-size: 12px; font-weight: 500;
+    font-size: 13px; font-weight: 500;
     white-space: nowrap;
   }
-  .cc-schedule-row__time svg { width: 14px; height: 14px; stroke: #667085; }
   .cc-schedule-row--flag {
     background: #FEF6EE;
     border-color: #F9DBAF;
-  }
-  .cc-schedule-row--flag .cc-schedule-row__num {
-    background: #FDE1CB;
-    color: #B54708;
   }
 
   .cc-schedule-warn {
@@ -2187,42 +2279,30 @@
   .cc-schedule-receipt {
     display: flex;
     flex-direction: column;
-    gap: 8px;
     margin: 8px 0 20px 0;
     text-align: left;
+    border-top: 1px solid var(--camp-border-hairline, #E4E7EC);
+    border-bottom: 1px solid var(--camp-border-hairline, #E4E7EC);
   }
   .cc-schedule-receipt__row {
     display: grid;
-    grid-template-columns: 22px 60px 1fr auto;
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 20px;
     align-items: center;
-    padding: 10px 14px;
-    background: var(--camp-surface, #FFFFFF);
-    border: 1px solid var(--camp-border-hairline, #E4E7EC);
-    border-radius: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(228, 231, 236, 0.72);
     font-family: var(--font-sans);
     font-size: 13px;
     color: var(--camp-text-secondary, #667085);
   }
-  .cc-schedule-receipt__row--live { border-color: rgba(46, 125, 50, 0.30); }
-  .cc-schedule-receipt__icon {
-    width: 22px; height: 22px;
-    display: grid; place-items: center;
-    border-radius: 50%;
-    background: var(--camp-primary-tint, #EEF0FF);
-    color: var(--camp-primary, #545BD1);
-    flex-shrink: 0;
-  }
-  .cc-schedule-receipt__row--live .cc-schedule-receipt__icon {
-    background: #E7F5EA; color: #2E7D32;
-  }
-  .cc-schedule-receipt__icon svg { width: 12px; height: 12px; }
-  .cc-schedule-receipt__num {
-    font-weight: 600; color: var(--camp-text-primary, #101828);
-    font-size: 12px; letter-spacing: 0.3px; text-transform: uppercase;
+  .cc-schedule-receipt__row:last-child {
+    border-bottom: 0;
   }
   .cc-schedule-receipt__hook {
     color: var(--camp-text-primary, #101828);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 19px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2241,7 +2321,7 @@
 
   /* ==================================================================
      QDock option row overrides — numbers on the LEFT (Claude-Code style),
-     bigger main text when a "why" subtext is present.
+     bigger main text when a descriptive subtext is present.
      ================================================================== */
   .cc-qdock__opt {
     grid-template-columns: 28px 1fr auto !important;
@@ -2288,11 +2368,6 @@
     line-height: 18px !important;
     color: var(--camp-text-secondary) !important;
     letter-spacing: 0.1px !important;
-  }
-  .cc-qdock__opt-sub::before {
-    content: 'Why · ';
-    color: var(--camp-text-tertiary);
-    font-weight: 500;
   }
   .cc-qdock__opt-rec {
     align-self: center;
@@ -2900,7 +2975,7 @@
     flex-direction: column;
     gap: 14px;
     width: 100%;
-    max-width: 520px;
+    max-width: 640px;
     align-self: flex-start;
   }
   .cc-intent-hint { align-self: flex-start; }
@@ -2943,11 +3018,13 @@
     font-weight: 500;
     color: inherit;
     letter-spacing: 0.05px;
+    line-height: 21px;
   }
   .cc-intent-pill__meta {
     color: var(--camp-text-tertiary, #98A2B3);
     font-weight: 400;
     font-size: 13.5px;
+    line-height: 19px;
     letter-spacing: 0.1px;
   }
   .cc-intent-hint {
@@ -3276,6 +3353,29 @@
     border: 1px solid var(--camp-border-hairline);
     padding: 0;
   }
+  .cc-postcard__imgslot--ready::after {
+    content: "Options";
+    position: absolute;
+    inset: auto 6px 6px 6px;
+    min-height: 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.66);
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 160ms var(--ease-standard), transform 160ms var(--ease-standard);
+    pointer-events: none;
+  }
+  .cc-postcard__imgslot--ready:hover::after,
+  .cc-postcard__imgslot--ready:focus-visible::after {
+    opacity: 1;
+    transform: translateY(0);
+  }
   .cc-postcard__imgslot--ready img {
     width: 100%; height: 100%; object-fit: cover; display: block;
   }
@@ -3293,7 +3393,7 @@
   }
 
   /* Image-source popover — the small menu that opens when the user clicks
-     an empty image slot. Two options: Upload from device, Generate with AI. */
+     an image slot. Empty slots offer upload/generate; ready slots add remove. */
   .cc-imgmenu {
     position: absolute;
     z-index: 55;
@@ -3324,11 +3424,14 @@
     transition: background 140ms var(--ease-standard);
   }
   .cc-imgmenu__opt:hover { background: var(--camp-surface-hover, #F5F7FA); }
+  .cc-imgmenu__opt--danger { color: #B42318; }
+  .cc-imgmenu__opt--danger:hover { background: #FEF3F2; }
   .cc-imgmenu__opt svg {
     width: 16px; height: 16px;
     color: var(--camp-primary, #545BD1);
     flex-shrink: 0;
   }
+  .cc-imgmenu__opt--danger svg { color: #D92D20; }
   .cc-imgmenu__sub {
     display: block;
     color: var(--camp-text-tertiary, #98A2B3);
@@ -3417,9 +3520,9 @@
     <symbol id="i-tone-community" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><circle cx="17" cy="7" r="2.4"/><path d="M15 14c3 0 6 2.2 6 5"/></symbol>
     <symbol id="i-tone-cheeky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M8 9.5c.6-.8 1.3-1 2-1"/><circle cx="15" cy="9.2" r="0.9" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-tone-reflective" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h5v6H7l-1 3V6z"/><path d="M14 6h5v6h-4l-1 3V6z"/></symbol>
-    <!-- Post-card action glyphs for the delete/duplicate split. -->
-    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
-    <symbol id="i-duplicate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <!-- Post-card action glyphs for copy/remove. -->
+    <symbol id="i-post-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="11" height="13" rx="2"/><path d="M5 16H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/><path d="M13.5 11.5v5"/><path d="M11 14h5"/></symbol>
+    <symbol id="i-post-remove" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14"/><path d="M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7"/><path d="M7 7l.8 12A2 2 0 0 0 9.8 21h4.4a2 2 0 0 0 2-2L17 7"/><path d="M10 12h4"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></symbol>
     <symbol id="i-pencil-line" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path d="M14.06 6.19l3.75 3.75"/></symbol>
     <symbol id="i-book-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h7a3 3 0 0 1 3 3v12"/><path d="M22 6h-7a3 3 0 0 0-3 3v12"/></symbol>
@@ -3527,22 +3630,22 @@
           <span class="cc-landing__lead-badge" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-sparkle"/></svg>
           </span>
-          A few directions I'd start from
+          Campaign directions backed by your account signals
         </div>
         <div class="cc-intent-pills" id="cc-shape-grid">
           <button class="cc-intent-pill cc-intent-pill--rec" type="button" data-shape="holiday">
-            <span class="cc-intent-pill__label">1989 anniversary week</span>
-            <span class="cc-intent-pill__meta">Oct 27 · your top-reach format</span>
+            <span class="cc-intent-pill__label">Countdown to the 1989 anniversary</span>
+            <span class="cc-intent-pill__meta">Use Oct 27 as the anchor for a 5-post nostalgia countdown. This fits your strongest reach pattern because anniversary throwbacks have outperformed your usual posts.</span>
           </button>
 
           <button class="cc-intent-pill" type="button" data-shape="trend">
-            <span class="cc-intent-pill__label">Track 5 easter-egg theory</span>
-            <span class="cc-intent-pill__meta">"Track 5" mentions up 3.4× this week</span>
+            <span class="cc-intent-pill__label">Turn the Track 5 theory into a carousel</span>
+            <span class="cc-intent-pill__meta">Build a clue-by-clue breakdown around the theory fans are already discussing. This fits your save behavior because your audience keeps lyric and easter-egg explainers.</span>
           </button>
 
           <button class="cc-intent-pill" type="button" data-shape="success">
-            <span class="cc-intent-pill__label">Rank the eras poll</span>
-            <span class="cc-intent-pill__meta">Your top-commented post this year — 4.1× replies</span>
+            <span class="cc-intent-pill__label">Run a second eras-ranking poll</span>
+            <span class="cc-intent-pill__meta">Bring back the debate mechanic that drove 4.1× your usual replies. This version uses a tighter bracket and a cleaner finals post so the discussion has a payoff.</span>
           </button>
         </div>
         <div class="cc-intent-hint">Or type your own idea below.</div>
@@ -3733,7 +3836,7 @@
   </div>
 </div>
 
-<!-- Schedule confirmation modal — two states: confirm + success. -->
+<!-- Schedule confirmation modal — confirm + success. -->
 <div class="cc-modal-scrim" id="cc-schedule-scrim" hidden>
   <div class="cc-modal cc-modal--schedule" role="dialog" aria-labelledby="cc-schedule-title" aria-modal="true">
     <!-- Confirm state -->
@@ -3743,8 +3846,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
         </span>
       </div>
-      <h2 class="cc-modal__title" id="cc-schedule-title">Publish your campaign</h2>
-      <p class="cc-modal__desc" id="cc-schedule-desc">Post 1 goes live now. The other three publish at the times shown below.</p>
+      <h2 class="cc-modal__title" id="cc-schedule-title">Schedule campaign</h2>
+      <p class="cc-modal__desc" id="cc-schedule-desc">Review the next upcoming posts before Scout queues them for @swiftie.central.</p>
 
       <!-- Per-post schedule preview -->
       <div class="cc-schedule-list" id="cc-schedule-list" role="list"></div>
@@ -3752,13 +3855,13 @@
       <!-- Optional warning strip when a post has an unresolved issue. -->
       <div class="cc-schedule-warn" id="cc-schedule-warn" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
-        <span id="cc-schedule-warn-text">One post has an image that looked off-brief. Publish anyway, or open the post to swap it.</span>
+        <span id="cc-schedule-warn-text">One post has an image that looked off-brief. Schedule anyway, or open the post to swap it.</span>
       </div>
 
-      <div class="cc-modal__foot cc-modal__foot--three">
+      <div class="cc-modal__foot">
         <button class="cc-modal__btn cc-modal__btn--ghost" type="button" id="cc-schedule-cancel">Keep editing</button>
-        <button class="cc-modal__btn cc-modal__btn--secondary" type="button" id="cc-schedule-publish-now">Schedule for later</button>
-        <button class="cc-modal__btn cc-modal__btn--primary" type="button" id="cc-schedule-confirm">Publish now</button>
+        <button class="cc-modal__btn cc-modal__btn--secondary" type="button" id="cc-schedule-publish-now" hidden>Schedule for later</button>
+        <button class="cc-modal__btn cc-modal__btn--primary" type="button" id="cc-schedule-confirm">Schedule campaign</button>
       </div>
     </div>
 
@@ -3772,8 +3875,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
         </span>
       </div>
-      <h2 class="cc-modal__title" id="cc-schedule-posting-title">Publishing your campaign…</h2>
-      <p class="cc-modal__desc" id="cc-schedule-posting-desc">Post 1 goes out now. The other three queue up at the times you set.</p>
+      <h2 class="cc-modal__title" id="cc-schedule-posting-title">Scheduling your campaign...</h2>
+      <p class="cc-modal__desc" id="cc-schedule-posting-desc">Scout is adding the posts to your campaign schedule.</p>
       <ul class="cc-schedule-progress" id="cc-schedule-progress" aria-live="polite"></ul>
     </div>
 
@@ -3787,8 +3890,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 20 7"/></svg>
         </span>
       </div>
-      <h2 class="cc-modal__title" id="cc-schedule-success-title">Your campaign is live</h2>
-      <p class="cc-modal__desc" id="cc-schedule-success-desc">Post 1 just went out. The other three publish at the times you set — you can still edit them from Campaigns.</p>
+      <h2 class="cc-modal__title" id="cc-schedule-success-title">Campaign scheduled</h2>
+      <p class="cc-modal__desc" id="cc-schedule-success-desc">Scout queued the upcoming posts. You can still edit them from Campaigns before they go live.</p>
       <!-- Per-post live vs queued receipt. -->
       <div class="cc-schedule-receipt" id="cc-schedule-receipt" role="list"></div>
       <div class="cc-modal__foot">
@@ -3866,6 +3969,8 @@
       await beat(200);
       titleEl.textContent = title;
       if (subtitle != null) subEl.textContent = subtitle;
+      if (title && title !== 'Drafting your campaign') titleEl.dataset.campaignTitle = title;
+      if (subtitle != null) subEl.dataset.campaignSubtitle = subtitle;
       await beat(20);
       titleEl.classList.remove('is-swapping');
       subEl.classList.remove('is-swapping');
@@ -4076,13 +4181,17 @@
       const idx = aiPopIdx;
       const state = postState[idx];
       if (!state) return;
+      if (!preset) appendPostInstructionMsg(idx, label);
       // Snapshot for undo.
       const prev = { hook: state.hook, body: state.body, version: state.version };
       state.version += 1;
       state.hook = varyHook(state.hook, preset || label);
       closeAIPopover();
       const card = drafts.querySelector('[data-post-idx="' + idx + '"]');
-      if (card) regenPost(card, state);
+      if (card) {
+        card.classList.add('is-ai-processing');
+        regenPost(card, state);
+      }
       fireToast({
         kind: 'warn',
         title: 'Refined post ' + (idx+1),
@@ -4121,7 +4230,7 @@
     // Demo the mismatch state on Post 3 for pattern showcase.
     // -----------------------------------------------------------------
     const IMAGE_OPTIONS = [
-      { label: 'Generate with Scout',   value: 'generate',  icon: 'i-sparkle' },
+      { label: 'Generate using Scout',  value: 'generate',  icon: 'i-sparkle' },
       { label: 'Upload from device',    value: 'upload',    icon: 'i-book-open' },
       { sep: true },
       { label: 'Skip image for this post', value: 'skip',   icon: 'i-x-square' },
@@ -4229,15 +4338,15 @@
     // Typewriter — character stream with punctuation pauses.
     // 14ms base · 90ms after commas/colons · 160ms after sentence enders.
     // -----------------------------------------------------------------
-    async function typewriter(node, text, baseSpeed = 14) {
+    async function typewriter(node, text, baseSpeed = 14, pauseScale = 1) {
       node.textContent = '';
       for (let i = 0; i < text.length; i++) {
         const ch = text[i];
         node.appendChild(document.createTextNode(ch));
         let d = baseSpeed;
-        if (ch === '.' || ch === '?' || ch === '!') d = 160;
-        else if (ch === ',' || ch === ';' || ch === ':') d = 90;
-        else if (ch === '\n') d = 220;
+        if (ch === '.' || ch === '?' || ch === '!') d = 160 * pauseScale;
+        else if (ch === ',' || ch === ';' || ch === ':') d = 90 * pauseScale;
+        else if (ch === '\n') d = 220 * pauseScale;
         await beat(d);
         if (i % 6 === 0) scrollDown();
       }
@@ -4265,7 +4374,7 @@
     // Structure mirrors onboarding (.msg / .msg__head / .msg__text):
     //   [head: avatar + "Scout"]   (only on the most recent Scout turn)
     //   [text: plain typewriter body, no bubble]
-    async function appendScoutMsg(text, { thinkFor = 500, beatAfter = 500 } = {}) {
+    async function appendScoutMsg(text, { thinkFor = 500, beatAfter = 500, charSpeed = 14, pauseScale = 1 } = {}) {
       // Retire previous Scout turns so only the current one shows a head —
       // the log reads as one live speaker, not a wall of avatars.
       chatlog.querySelectorAll('.chatmsg--scout').forEach(m => m.classList.add('chatmsg--past'));
@@ -4287,7 +4396,7 @@
       av.removeAttribute('aria-label');
       av.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><use href="#i-logo"/></svg>';
       const body = msg.querySelector('.chatmsg__text');
-      await typewriter(body, text);
+      await typewriter(body, text, charSpeed, pauseScale);
       await beat(beatAfter);
       return msg;
     }
@@ -4299,6 +4408,21 @@
         '<div class="chatmsg__bubble"></div>'
       );
       msg.querySelector('.chatmsg__bubble').textContent = text;
+      chatlog.appendChild(msg);
+      scrollDown();
+      return msg;
+    }
+
+    function appendPostInstructionMsg(idx, text) {
+      const msg = el('div', 'chatmsg chatmsg--user chatmsg--post-instruction',
+        '<div class="chatmsg__bubble">' +
+          '<span class="chatmsg__post-context"></span>' +
+          '<span class="chatmsg__post-text"></span>' +
+        '</div>'
+      );
+      msg.querySelector('.chatmsg__post-context').textContent =
+        'Post ' + String(idx + 1).padStart(2, '0') + ' selected · Scout is processing';
+      msg.querySelector('.chatmsg__post-text').textContent = text;
       chatlog.appendChild(msg);
       scrollDown();
       return msg;
@@ -4518,7 +4642,7 @@
       // Multi-select isn't used in the current flow; treat everything as
       // single-select via the qdock. When it comes back, wrap in an array
       // to match the original API. Pass through sub + primary so the
-      // options render with the "why" subtext hierarchy.
+      // options render with the descriptive subtext hierarchy.
       const result = await openQDock({
         title: getLastScoutText() || 'Pick one',
         options: items.map((it) => ({ label: it.label, sub: it.sub, primary: it.primary })),
@@ -4700,7 +4824,7 @@
     // Plan card — the "here's the plan" block. Same visual chassis as
     // the confirmation card but ships without commit buttons: the plan
     // is presented, pencils let the user tweak any row inline, and the
-    // fork (Go with plan / My own idea / Show other angles) is chosen
+    // fork (Go with plan / Show other angles / typed direction) is chosen
     // via reply chips that appear below. Returns a live handle so the
     // caller can read the (possibly edited) values later for playback.
     // -----------------------------------------------------------------
@@ -4772,7 +4896,17 @@
         return out;
       }
 
-      return { element: card, readValues };
+      function setValues(values) {
+        Object.entries(values || {}).forEach(([label, value]) => {
+          const row = Array.from(card.querySelectorAll('.cc-conf__row'))
+            .find(r => r.querySelector('.cc-conf__label')?.textContent === label);
+          if (!row) return;
+          const valEl = row.querySelector('[data-conf-val]');
+          if (valEl) valEl.textContent = value;
+        });
+      }
+
+      return { element: card, readValues, setValues };
     }
 
     // -----------------------------------------------------------------
@@ -4789,9 +4923,9 @@
       Shape: {
         title: 'Which shape should we go with?',
         options: [
-          { label: '1989 anniversary countdown', primary: true },
-          { label: 'Track 5 theory sprint' },
-          { label: 'Rank-the-eras poll' },
+          { label: 'Countdown to the 1989 anniversary', primary: true },
+          { label: 'Turn the Track 5 theory into a carousel' },
+          { label: 'Run a second eras-ranking poll' },
         ],
       },
       Cadence: {
@@ -4823,8 +4957,8 @@
     function appendConfCard({ title, subtitle, rows, sections, primaryLabel = 'Looks right, draft it', ghostLabel = 'Not yet' }) {
       return new Promise((resolve) => {
         // Accept either legacy {rows} or richer {sections} shape. Sections
-        // gain a `meta` line beneath the value for the "why this choice"
-        // rationale — the plan card should feel like a plan, not a form.
+        // gain a `meta` line beneath the value for the descriptive rationale,
+        // so the plan card feels considered instead of form-like.
         const items = sections || rows.map(r => ({ label: r.label, value: r.value }));
         const rowsHTML = items.map((r, i) => `
           <div class="cc-conf__row" data-conf-row="${i}">
@@ -4925,7 +5059,7 @@
     //
     //   fillDrafts()       — once proc-line finishes, crossfade the
     //   skeletons to the real drafts and surface the footbar.
-    function openPanelLoading() {
+    function openPanelLoading({ preserveHeader = false } = {}) {
       // Skeleton cards mirror the real postdraft layout but every text
       // block is a pulsing bar. staggered animation-delays make the
       // shimmer feel alive, like content streaming in.
@@ -4946,8 +5080,10 @@
       // No panel heading anymore — instead, update the main campaign
       // heading in the top-left so the whole page moves into the
       // "drafting" state together. The subtitle carries the progress cue.
-      if (titleEl) titleEl.textContent = 'Drafting your campaign';
-      if (subEl)   subEl.textContent   = 'Pulling voice and shaping the posts…';
+      if (!preserveHeader) {
+        if (titleEl) titleEl.textContent = 'Drafting your campaign';
+        if (subEl)   subEl.textContent   = 'Pulling voice and shaping the posts…';
+      }
       const countEl = document.getElementById('cc-panel-count');
       if (countEl) countEl.textContent = 'Drafting…';
       document.body.classList.add('has-drafts');
@@ -5072,7 +5208,7 @@
     function postImageSlotHTML(p, i) {
       if (p.imageState === 'ready' && p.image) {
         const sourceLabel = p.image.source === 'generated' ? 'AI' : 'Uploaded';
-        return `<button type="button" class="cc-postcard__imgslot cc-postcard__imgslot--ready" data-post-image aria-label="Change image"><img src="${p.image.url}" alt="Post ${i+1} image" /><span class="cc-postcard__imgtag">${sourceLabel}</span></button>`;
+        return `<button type="button" class="cc-postcard__imgslot cc-postcard__imgslot--ready" data-post-image aria-label="Image options"><img src="${p.image.url}" alt="Post ${i+1} image" /><span class="cc-postcard__imgtag">${sourceLabel}</span></button>`;
       }
       if (p.imageState === 'uploading' || p.imageState === 'generating') {
         return `<div class="cc-postcard__imgslot cc-postcard__imgslot--busy" data-post-image aria-label="${p.imageState}"><span class="cc-postcard__imgspin"></span><span class="cc-postcard__imgbusy-label">${p.imageState === 'generating' ? 'Generating…' : 'Uploading…'}</span></div>`;
@@ -5108,16 +5244,16 @@
               </div>
               <div class="cc-postcard__row-head-right">
                 <span class="cc-postcard__status" data-post-tone>${p.tone === 'Celebratory' ? 'In Draft' : p.tone}</span>
-                <button class="cc-postcard__act cc-postcard__act--duplicate" type="button" aria-label="Duplicate post" title="Duplicate" data-post-duplicate>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-duplicate"/></svg>
+                <button class="cc-postcard__head-action cc-postcard__head-action--duplicate" type="button" aria-label="Copy post" title="Copy post" data-post-duplicate>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-post-copy"/></svg>
                 </button>
-                <button class="cc-postcard__act cc-postcard__act--delete" type="button" aria-label="Delete post" title="Delete" data-post-delete>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-trash"/></svg>
+                <button class="cc-postcard__head-action cc-postcard__head-action--delete" type="button" aria-label="Remove post" title="Remove post" data-post-delete>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-post-remove"/></svg>
                 </button>
               </div>
             </div>
             <div class="cc-postcard__body-row cc-postcard__body-row--image-right">
-              <div class="cc-postcard__text" role="textbox" tabindex="0">
+              <div class="cc-postcard__text" role="textbox" tabindex="0" contenteditable="true" spellcheck="true" aria-multiline="true" aria-label="Edit post copy" data-post-copy>
                 <span class="cc-postcard__hook">${p.hook}</span>
                 <span class="cc-postcard__body">${p.body}</span>
               </div>
@@ -5219,7 +5355,7 @@
           const src = p.image.url;
           const sourceLabel = p.image.source === 'generated' ? 'AI' : 'Uploaded';
           imageSlotHTML = `
-            <button type="button" class="cc-postcard__imgslot cc-postcard__imgslot--ready" data-post-image aria-label="Change image">
+            <button type="button" class="cc-postcard__imgslot cc-postcard__imgslot--ready" data-post-image aria-label="Image options">
               <img src="${src}" alt="Post ${i+1} image" />
               <span class="cc-postcard__imgtag">${sourceLabel}</span>
             </button>`;
@@ -5254,16 +5390,16 @@
               </div>
               <div class="cc-postcard__row-head-right">
                 <span class="cc-postcard__status" data-post-tone>${p.tone === 'Celebratory' ? 'In Draft' : p.tone}</span>
-                <button class="cc-postcard__act cc-postcard__act--duplicate" type="button" aria-label="Duplicate post" title="Duplicate" data-post-duplicate>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-duplicate"/></svg>
+                <button class="cc-postcard__head-action cc-postcard__head-action--duplicate" type="button" aria-label="Copy post" title="Copy post" data-post-duplicate>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-post-copy"/></svg>
                 </button>
-                <button class="cc-postcard__act cc-postcard__act--delete" type="button" aria-label="Delete post" title="Delete" data-post-delete>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-trash"/></svg>
+                <button class="cc-postcard__head-action cc-postcard__head-action--delete" type="button" aria-label="Remove post" title="Remove post" data-post-delete>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-post-remove"/></svg>
                 </button>
               </div>
             </div>
             <div class="cc-postcard__body-row cc-postcard__body-row--image-right">
-              <div class="cc-postcard__text" role="textbox" tabindex="0">
+              <div class="cc-postcard__text" role="textbox" tabindex="0" contenteditable="true" spellcheck="true" aria-multiline="true" aria-label="Edit post copy" data-post-copy>
                 <span class="cc-postcard__hook">${p.hook}</span>
                 <span class="cc-postcard__body">${p.body}</span>
               </div>
@@ -5322,8 +5458,8 @@
 
       // Drafting is done — restore the campaign identity on the page
       // heading, and switch the panel count to a settled message.
-      if (titleEl) titleEl.textContent = '1989 anniversary week';
-      if (subEl)   subEl.textContent   = 'Four posts, celebratory and community-first, drafted in your Swiftie voice.';
+      if (titleEl) titleEl.textContent = titleEl.dataset.campaignTitle || 'Countdown to the 1989 anniversary';
+      if (subEl)   subEl.textContent   = subEl.dataset.campaignSubtitle || 'Four posts, celebratory and community-first, drafted in your Swiftie voice.';
       const countEl = document.getElementById('cc-panel-count');
       if (countEl) countEl.textContent = postState.length + ' drafts ready';
       panel.classList.remove('side-panel--loading');
@@ -5350,9 +5486,10 @@
     }
 
     // ------------------------------------------------------------------
-    // Image slot — click opens a small popover with two paths:
+    // Image slot — click opens a small popover with post media actions:
     //   1. Upload from device (file picker)
-    //   2. Generate with AI (simulated in this prototype)
+    //   2. Remove image (when one is already attached)
+    //   3. Generate using Scout (simulated in this prototype)
     //
     // Also supports bulk drag-and-drop over the chat/panel: dropped files
     // are distributed to the first N posts whose image slot is empty.
@@ -5384,16 +5521,27 @@
     }
     function openImgMenu(anchor, idx) {
       closeImgMenu();
+      const st = postState[idx];
+      const hasImage = st && st.imageState === 'ready' && st.image;
+      const removeOption = hasImage
+        ? '<button class="cc-imgmenu__opt cc-imgmenu__opt--danger" data-imgopt="remove" type="button">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#i-post-remove"/></svg>' +
+            '<span>Remove image' +
+              '<span class="cc-imgmenu__sub">Return this post to text-only</span>' +
+            '</span>' +
+          '</button>'
+        : '';
       const menu = el('div', 'cc-imgmenu',
         '<button class="cc-imgmenu__opt" data-imgopt="upload" type="button">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="m6 9 6-6 6 6"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>' +
-          '<span>Upload from device' +
-            '<span class="cc-imgmenu__sub">JPG or PNG, up to 5 MB</span>' +
+          '<span>' + (hasImage ? 'Upload new image' : 'Upload from device') +
+            '<span class="cc-imgmenu__sub">' + (hasImage ? 'Replace the current image' : 'JPG or PNG, up to 5 MB') + '</span>' +
           '</span>' +
         '</button>' +
+        removeOption +
         '<button class="cc-imgmenu__opt" data-imgopt="generate" type="button">' +
           '<svg viewBox="0 0 24 24" fill="currentColor"><use href="#i-sparkle"/></svg>' +
-          '<span>Generate with AI' +
+          '<span>Generate using Scout' +
             '<span class="cc-imgmenu__sub">On-brand shot from your post copy</span>' +
           '</span>' +
         '</button>'
@@ -5415,6 +5563,7 @@
         const kind = opt.dataset.imgopt;
         closeImgMenu();
         if (kind === 'upload') triggerUploadForPost(idx);
+        else if (kind === 'remove') removeImageFromPost(idx);
         else if (kind === 'generate') generateImageForPost(idx);
       });
     }
@@ -5442,10 +5591,18 @@
         fireToast({
           kind: 'success',
           title: 'Image added to Post ' + (idx + 1),
-          desc: image.source === 'generated' ? 'Generated with AI.' : 'Uploaded from your device.',
+          desc: image.source === 'generated' ? 'Generated using Scout.' : 'Uploaded from your device.',
           duration: 3000,
         });
       }, 240);
+    }
+    function removeImageFromPost(idx) {
+      const st = postState[idx];
+      if (!st) return;
+      st.image = null;
+      st.imageState = 'empty';
+      replacePostCardDOM(idx);
+      fireToast({ kind: 'info', title: 'Image removed from Post ' + (idx + 1), duration: 2600 });
     }
     // Prototype: fake AI generation with a soft brand-tinted gradient.
     function generateImageForPost(idx) {
@@ -5720,6 +5877,96 @@
       }
     });
 
+    function syncEditedPostCopy(textEl) {
+      const card = textEl.closest('[data-post-idx]');
+      if (!card) return null;
+      const idx = Number(card.dataset.postIdx);
+      const state = postState[idx];
+      if (!state) return null;
+      const hookEl = textEl.querySelector('.cc-postcard__hook');
+      const bodyEl = textEl.querySelector('.cc-postcard__body');
+      const raw = textEl.textContent.replace(/\s+/g, ' ').trim();
+      if (hookEl || bodyEl) {
+        state.hook = (hookEl ? hookEl.textContent : '').replace(/\s+/g, ' ').trim();
+        state.body = (bodyEl ? bodyEl.textContent : '').replace(/\s+/g, ' ').trim();
+      } else {
+        state.hook = raw;
+        state.body = '';
+      }
+      const countEl = card.querySelector('[data-post-count]');
+      if (countEl) countEl.textContent = String((state.hook + ' ' + state.body).trim().length);
+      return { card, idx, state };
+    }
+
+    function normalizeEditedPostMarkup(textEl, state) {
+      if (!state) return;
+      if (textEl.querySelector('.cc-postcard__hook') && textEl.querySelector('.cc-postcard__body')) return;
+      const safeHook = state.hook.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+      const safeBody = state.body.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+      textEl.innerHTML =
+        '<span class="cc-postcard__hook">' + safeHook + '</span>' +
+        '<span class="cc-postcard__body">' + safeBody + '</span>';
+    }
+
+    drafts.addEventListener('input', (e) => {
+      const textEl = e.target.closest('.cc-postcard__text[contenteditable="true"]');
+      if (!textEl) return;
+      syncEditedPostCopy(textEl);
+    });
+
+    drafts.addEventListener('focusin', (e) => {
+      const textEl = e.target.closest('.cc-postcard__text[contenteditable="true"]');
+      if (!textEl) return;
+      textEl.classList.add('is-editing');
+      if (!textEl.dataset.editSnapshot) {
+        textEl.dataset.editSnapshot = textEl.textContent.trim();
+      }
+    });
+
+    drafts.addEventListener('click', (e) => {
+      const textEl = e.target.closest('.cc-postcard__text[contenteditable="true"]');
+      if (!textEl) return;
+      textEl.focus({ preventScroll: true });
+      textEl.classList.add('is-editing');
+    });
+
+    drafts.addEventListener('keydown', (e) => {
+      const textEl = e.target.closest('.cc-postcard__text[contenteditable="true"]');
+      if (!textEl) return;
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        textEl.blur();
+      }
+    });
+
+    drafts.addEventListener('paste', (e) => {
+      const textEl = e.target.closest('.cc-postcard__text[contenteditable="true"]');
+      if (!textEl) return;
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      document.execCommand('insertText', false, text);
+    });
+
+    drafts.addEventListener('blur', (e) => {
+      const textEl = e.target.closest('.cc-postcard__text[contenteditable="true"]');
+      if (!textEl) return;
+      const synced = syncEditedPostCopy(textEl);
+      if (!synced) return;
+      textEl.classList.remove('is-editing');
+      const before = textEl.dataset.editSnapshot || '';
+      const after = textEl.textContent.trim();
+      textEl.dataset.editSnapshot = '';
+      if (before === after) return;
+      normalizeEditedPostMarkup(textEl, synced.state);
+      synced.state.version += 1;
+      const verEl = synced.card.querySelector('.cc-postcard__ver');
+      if (verEl) {
+        verEl.textContent = 'v1.' + synced.state.version;
+        verEl.hidden = false;
+      }
+      fireToast({ kind: 'info', title: 'Post ' + (synced.idx + 1) + ' updated', duration: 1800 });
+    }, true);
+
     // Refresh a single card's copy in place (fake regen — swap the hook).
     async function regenPost(card, state) {
       const hookEl = card.querySelector('.cc-postcard__hook');
@@ -5745,6 +5992,7 @@
       hookEl.textContent = pick;
       hookEl.style.opacity = '1';
       bodyEl.style.opacity = '1';
+      card.classList.remove('is-ai-processing');
     }
 
     function fillDrafts() {
@@ -5976,24 +6224,24 @@
       // opener so Scout's Turn 1 message reflects why the user picked it.
       success: {
         kind: 'Replay',
-        title: 'Rank the eras poll',
-        summary: "Your highest-comment format, run again.",
-        subtitleFactual: "A community poll built on your highest-comment format from the last three months.",
-        openingScout: "Your \"rank the eras\" poll was your top-commented post this year — 4.1× your usual replies. Fandom's warmed up again this week, so here's the plan I'd build on:",
+        title: 'Run a second eras-ranking poll',
+        summary: "A proven debate format with 4.1× reply lift.",
+        subtitleFactual: "A community poll built from your strongest reply-driving format, tightened into a cleaner bracket and finals moment.",
+        openingScout: "Your last eras-ranking poll drove 4.1× your usual replies, which makes it the strongest comment format in your recent history. I would reuse the debate mechanic, tighten the bracket, and give the final result its own moment:",
       },
       trend: {
         kind: 'Trend',
-        title: 'Track 5 easter-egg theory',
-        summary: 'Riding the theory chatter this week.',
-        subtitleFactual: "A theory-carousel sprint that rides the Track 5 easter-egg chatter buzzing in the fandom this week.",
-        openingScout: "\"Track 5\" mentions in your niche are up 3.4× this week — Swifties are decoding fresh clues. Theory carousels are your highest-save format, so here's the plan I'd land while the chatter's live:",
+        title: 'Turn the Track 5 theory into a carousel',
+        summary: 'A rising theory signal matched to your save-friendly format.',
+        subtitleFactual: "A theory-carousel sprint built around Track 5 chatter, with each post designed to turn clue hunting into replies and saves.",
+        openingScout: "Track 5 chatter is up 3.4× this week, and Swifties are already trying to connect the clues. Your audience saves theory breakdowns, so I would lead with a carousel, then move the debate into comments while the signal is still fresh:",
       },
       holiday: {
         kind: 'Holiday',
-        title: '1989 anniversary week',
-        summary: "Oct 27 anniversary countdown.",
-        subtitleFactual: "A 5-post anniversary countdown timed to the 1989 anniversary on Oct 27.",
-        openingScout: "Big week coming up — the 1989 anniversary lands Oct 27, and your anniversary throwback posts are consistently your highest-reach content. Here's the plan I'd build on:",
+        title: 'Countdown to the 1989 anniversary',
+        summary: "A timely anniversary countdown built from your top-reach posts.",
+        subtitleFactual: "A 5-post anniversary countdown timed to Oct 27, using the throwback format that has historically reached the most fans.",
+        openingScout: "The 1989 anniversary lands on Oct 27, and your anniversary throwbacks have been the account's strongest reach format. I would use the date as the anchor, then build a countdown that mixes nostalgia, clue hunting, and one community prompt:",
       },
       custom: {
         kind: 'Your own',
@@ -6050,9 +6298,9 @@
       const result = await openQDock({
         title: 'Which shape should I use instead?',
         options: [
-          { label: '1989 anniversary week (Oct 27)', primary: true, value: 'holiday' },
-          { label: 'Track 5 easter-egg theory',      value: 'trend' },
-          { label: 'Rank the eras poll',             value: 'success' },
+          { label: 'Countdown to the 1989 anniversary', primary: true, value: 'holiday' },
+          { label: 'Turn the Track 5 theory into a carousel', value: 'trend' },
+          { label: 'Run a second eras-ranking poll', value: 'success' },
         ],
         placeholder: 'Or tell me a different angle',
       });
@@ -6089,10 +6337,8 @@
       });
     });
 
-    // Post-campaign modal wiring — three states: confirm → posting → success.
-    // Primary action posts the first post now and queues the rest to the
-    // schedule preview. Secondary action ("Schedule for later") queues
-    // everything without publishing anything immediately.
+    // Post-campaign modal wiring — review the upcoming posts, then queue
+    // the campaign schedule. No post is published immediately from here.
     const scheduleView   = {
       confirm: document.getElementById('cc-schedule-view-confirm'),
       posting: document.getElementById('cc-schedule-view-posting'),
@@ -6105,10 +6351,38 @@
     const schedulePublish  = document.getElementById('cc-schedule-publish-now');
     const scheduleDone     = document.getElementById('cc-schedule-done');
     const scheduleCloseX   = document.getElementById('cc-schedule-close-x');
-    const schedulePostingTitle = document.getElementById('cc-schedule-posting-title');
-    const schedulePostingDesc  = document.getElementById('cc-schedule-posting-desc');
-    const scheduleProgress = document.getElementById('cc-schedule-progress');
     const scheduleReceipt  = document.getElementById('cc-schedule-receipt');
+    let scheduleRedirectTimer = null;
+
+    function campaignSlug(title) {
+      return String(title || 'generated-campaign')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 72) || 'generated-campaign';
+    }
+
+    function generatedCampaignDashboardUrl() {
+      const campaignTitle = (titleEl && titleEl.textContent.trim()) || 'New campaign';
+      const firstPost = postState[0] || {};
+      const lastPost = postState[postState.length - 1] || firstPost;
+      const params = new URLSearchParams();
+      params.set('view', 'campaigns');
+      params.set('campaign-posted', campaignSlug(campaignTitle));
+      params.set('campaign-title', campaignTitle);
+      params.set('campaign-posts', String(postState.length || 4));
+      if (firstPost.day) params.set('campaign-start', firstPost.day);
+      if (lastPost.day) params.set('campaign-end', lastPost.day);
+      return '../poc/index.html?' + params.toString();
+    }
+
+    function goToGeneratedCampaignDashboard() {
+      if (scheduleRedirectTimer) {
+        clearTimeout(scheduleRedirectTimer);
+        scheduleRedirectTimer = null;
+      }
+      location.href = generatedCampaignDashboardUrl();
+    }
 
     function detectMismatchCount() {
       // Any post whose image slot carries the mismatch class is unresolved.
@@ -6119,12 +6393,8 @@
       scheduleList.innerHTML = postState.map((p, i) => {
         const isFlag = false; // In the row layout, mismatches aren't per-post yet; keep hook simple.
         return `<div class="cc-schedule-row${isFlag ? ' cc-schedule-row--flag' : ''}" role="listitem">
-          <span class="cc-schedule-row__num">Post ${i+1}</span>
-          <span class="cc-schedule-row__hook">${p.hook}</span>
-          <span class="cc-schedule-row__time">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clock"/></svg>
-            ${p.day}
-          </span>
+          <span class="cc-schedule-row__hook">${p.hook || 'Post ' + (i + 1)}</span>
+          <span class="cc-schedule-row__time">${p.day}</span>
         </div>`;
       }).join('');
     }
@@ -6136,11 +6406,12 @@
       scheduleView.success.hidden = true;
       // Title reflects the current post count.
       const n = postState.length;
-      const words = n === 1 ? 'this post' : 'your ' + n + '-post campaign';
-      scheduleTitleEl.textContent = n === 1 ? 'Post to X' : 'Post your campaign to X';
+      scheduleConfirm.disabled = false;
+      scheduleConfirm.textContent = n === 1 ? 'Schedule post' : 'Schedule campaign';
+      scheduleTitleEl.textContent = n === 1 ? 'Schedule post' : 'Schedule campaign';
       scheduleDescEl.textContent  = n === 1
-        ? 'Publishing this post to @swiftie.central right now.'
-        : 'Post 1 goes live now on @swiftie.central. The rest queue up to the schedule you saw.';
+        ? 'Review this upcoming post before Scout queues it for @swiftie.central.'
+        : 'Review the next upcoming posts before Scout queues them for @swiftie.central.';
       // Preview list.
       buildScheduleList();
       // Warn if anything unresolved.
@@ -6148,7 +6419,7 @@
       if (mismatches > 0) {
         scheduleWarn.hidden = false;
         document.getElementById('cc-schedule-warn-text').textContent =
-          mismatches + ' post' + (mismatches > 1 ? 's have' : ' has') + ' an unresolved image mismatch. Post anyway?';
+          mismatches + ' post' + (mismatches > 1 ? 's have' : ' has') + ' an unresolved image mismatch. Schedule anyway?';
       } else {
         scheduleWarn.hidden = true;
       }
@@ -6162,113 +6433,70 @@
       if (e.target === scheduleScrim) closeScheduleModal();
     });
 
-    // Build the animated posting list — one row per post, walking from
-    // spinner ("Posting…" / "Queuing…") to check ("Live" / "Queued").
-    function buildProgressList({ scheduleOnly }) {
-      scheduleProgress.innerHTML = postState.map((p, i) => {
-        const pending = scheduleOnly ? 'Queuing…' : (i === 0 ? 'Posting…' : 'Queuing…');
-        return `<li class="cc-schedule-progress__row" data-progress-idx="${i}">
-          <span class="cc-schedule-progress__icon cc-schedule-progress__icon--spin">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-              <path d="M21 12a9 9 0 1 1-6.2-8.55" />
-            </svg>
-          </span>
-          <span class="cc-schedule-progress__num">Post ${i+1}</span>
-          <span class="cc-schedule-progress__hook">${p.hook}</span>
-          <span class="cc-schedule-progress__status">${pending}</span>
-        </li>`;
-      }).join('');
-    }
-
-    // Flip a row from spinner → check with the settled label.
-    function markProgressDone(idx, { scheduleOnly }) {
-      const row = scheduleProgress.querySelector('[data-progress-idx="' + idx + '"]');
-      if (!row) return;
-      row.classList.add('cc-schedule-progress__row--done');
-      const icon = row.querySelector('.cc-schedule-progress__icon');
-      icon.classList.remove('cc-schedule-progress__icon--spin');
-      icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 20 7"/></svg>';
-      const status = row.querySelector('.cc-schedule-progress__status');
-      status.textContent = scheduleOnly ? 'Queued' : (idx === 0 ? 'Live' : 'Queued');
-    }
-
-    // Success receipt — settled version of the progress list, shown on
-    // the success view so the outcome is visible at a glance.
-    function buildSuccessReceipt({ scheduleOnly }) {
+    // Success receipt — the same compact review sheet, now settled.
+    function buildSuccessReceipt() {
       scheduleReceipt.innerHTML = postState.map((p, i) => {
-        const isLive = !scheduleOnly && i === 0;
-        return `<div class="cc-schedule-receipt__row${isLive ? ' cc-schedule-receipt__row--live' : ''}" role="listitem">
-          <span class="cc-schedule-receipt__icon">
-            ${isLive
-              ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 20 7"/></svg>'
-              : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>'}
-          </span>
-          <span class="cc-schedule-receipt__num">Post ${i+1}</span>
-          <span class="cc-schedule-receipt__hook">${p.hook}</span>
-          <span class="cc-schedule-receipt__status">${isLive ? 'Live now' : p.day}</span>
+        return `<div class="cc-schedule-receipt__row" role="listitem">
+          <span class="cc-schedule-receipt__hook">${p.hook || 'Post ' + (i + 1)}</span>
+          <span class="cc-schedule-receipt__status">${p.day}</span>
         </div>`;
       }).join('');
     }
 
-    // Commit the whole batch. `scheduleOnly` = true → queue everything,
-    // publish nothing immediately (the "Schedule for later" secondary CTA).
-    // `scheduleOnly` = false (default) → post 1 goes live now, rest queue.
-    async function commitSchedule({ scheduleOnly } = {}) {
-      // 1. Confirm → Posting transition. Show the animated progress list.
-      scheduleView.confirm.hidden = true;
-      scheduleView.posting.hidden = false;
+    // Commit the whole batch. The campaign is already drafted, so this
+    // uses a brief settled transition instead of walking every row.
+    async function commitSchedule() {
       const n = postState.length;
-      schedulePostingTitle.textContent = scheduleOnly
-        ? 'Queuing your campaign…'
-        : 'Posting your campaign…';
-      schedulePostingDesc.textContent = scheduleOnly
-        ? 'Adding all ' + n + ' posts to your schedule.'
-        : 'Publishing Post 1 to X and queuing the rest on your schedule.';
-      buildProgressList({ scheduleOnly });
+      scheduleConfirm.disabled = true;
+      scheduleConfirm.textContent = 'Scheduling...';
+      await beat(260);
 
-      // 2. Walk the list — flip each row's spinner to a check on a
-      // rhythm. The first post gets a slightly longer beat so "Live"
-      // reads as the moment things go public.
-      for (let i = 0; i < n; i++) {
-        await beat(scheduleOnly ? 420 : (i === 0 ? 900 : 480));
-        markProgressDone(i, { scheduleOnly });
-      }
-      await beat(500);
-
-      // 3. Posting → Success. Show the settled receipt + settled CTAs.
+      scheduleView.confirm.hidden = true;
       scheduleView.posting.hidden = true;
       scheduleView.success.hidden = false;
-      document.getElementById('cc-schedule-success-title').textContent = scheduleOnly
-        ? (n === 1 ? 'Your post is scheduled' : 'Your campaign is scheduled')
-        : (n === 1 ? 'Your post is live' : 'Your campaign is live');
-      document.getElementById('cc-schedule-success-desc').textContent = scheduleOnly
-        ? 'All ' + n + ' posts are queued to publish on your schedule.'
-        : 'Post 1 just went out. The remaining ' + (n-1) + ' are queued to publish on their schedule.';
-      buildSuccessReceipt({ scheduleOnly });
+      document.getElementById('cc-schedule-success-title').textContent =
+        n === 1 ? 'Post scheduled' : 'Campaign scheduled';
+      document.getElementById('cc-schedule-success-desc').textContent =
+        (n === 1 ? 'Scout queued this post' : 'Scout queued all ' + n + ' posts') + ' for @swiftie.central. You can still edit before anything goes live.';
+      buildSuccessReceipt();
 
-      // 4. Settle the surface — status pill goes to ready, toolbar
+      // Settle the surface — status pill goes to ready, toolbar
       // buttons disable so the user can't re-fire the flow, and a
       // toast lands on the bottom-right as a reassurance cue.
       setStatus('ready');
-      footHint.textContent = scheduleOnly
-        ? 'All ' + n + ' posts are queued. Scout will publish them on schedule.'
-        : 'Post 1 is live, ' + (n-1) + ' queued.';
+      footHint.textContent = (n === 1 ? '1 post is queued.' : 'All ' + n + ' posts are queued.') + ' Scout will publish on schedule.';
       footbar.querySelectorAll('button').forEach(b => { b.disabled = true; });
       panel.querySelectorAll('.side-panel__toolbar button').forEach(b => { b.disabled = true; });
       fireToast({
-        title: scheduleOnly ? 'Campaign scheduled' : 'Campaign live',
-        desc: scheduleOnly ? n + ' posts queued to X' : 'Post 1 is on X · ' + (n-1) + ' queued',
+        title: n === 1 ? 'Post scheduled' : 'Campaign scheduled',
+        desc: n + ' post' + (n === 1 ? '' : 's') + ' queued to X',
         duration: 4600,
       });
+      scheduleRedirectTimer = setTimeout(goToGeneratedCampaignDashboard, 900);
     }
 
-    scheduleConfirm.addEventListener('click', () => commitSchedule({ scheduleOnly: false }));
-    schedulePublish.addEventListener('click', () => commitSchedule({ scheduleOnly: true }));
+    scheduleConfirm.addEventListener('click', () => commitSchedule());
+    if (schedulePublish) schedulePublish.addEventListener('click', () => commitSchedule());
 
     // Success actions — both the primary CTA and the top-right close X
     // dismiss the modal and return the user to the surface.
-    scheduleDone.addEventListener('click', closeScheduleModal);
-    if (scheduleCloseX) scheduleCloseX.addEventListener('click', closeScheduleModal);
+    scheduleDone.addEventListener('click', goToGeneratedCampaignDashboard);
+    if (scheduleCloseX) scheduleCloseX.addEventListener('click', goToGeneratedCampaignDashboard);
+
+    document.querySelectorAll('[data-cc-schedule-later]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openSchedPicker();
+      });
+    });
+    document.querySelectorAll('[data-cc-schedule]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openScheduleModal();
+      });
+    });
 
     // Panel toolbar — Schedule for later / Post campaign. Delegated on
     // the document so the same handlers work regardless of where the
@@ -6280,10 +6508,12 @@
         // "Schedule for later" from the panel toolbar — open the custom
         // calendar/time picker so the user chooses a start date + time.
         // On Apply, post times redistribute from that anchor forward.
+        e.preventDefault();
         openSchedPicker();
         return;
       }
       if (sc) {
+        e.preventDefault();
         openScheduleModal();
       }
     });
@@ -6478,25 +6708,23 @@
       let commit = null;
       if (scoutBrief) {
         // Curated campaign detail view — the user clicked an already-
-        // generated campaign from the Scout rationale panel. Skip the
-        // shaping conversation entirely; the campaign is done, so we
-        // land straight on the split layout: chat on the left carrying
-        // the brief that generated it, drafts panel on the right.
+        // generated campaign from the Scout rationale panel. Skip every
+        // user-response animation and land immediately in the split
+        // detail layout: Scout's brief on the left, drafts loading on
+        // the right.
         leaveLanding();
+        if (landingEl) {
+          landingEl.hidden = true;
+          landingEl.classList.remove('is-leaving');
+        }
         const briefShape = SHAPES[(shapeParam && SHAPES[shapeParam]) ? shapeParam : 'holiday'];
         titleEl.textContent = campaignTitle || briefShape.title;
         subEl.textContent = briefShape.subtitleFactual;
         showShapeSummary({ kind: briefShape.kind, title: campaignTitle || briefShape.title, meta: briefShape.summary });
-        await beat(200);
-        if (campaignTitle) {
-          appendSelectionPill({ kind: 'CAMPAIGN', label: campaignTitle, icon: 'i-megaphone' });
-          await beat(200);
-        }
-        await appendScoutMsg(scoutBrief, { thinkFor: 260, beatAfter: 340 });
-        await beat(300);
         setStatus('drafting');
-        openPanelLoading();
-        await beat(400);
+        openPanelLoading({ preserveHeader: true });
+        await appendScoutMsg(scoutBrief, { thinkFor: 80, beatAfter: 80, charSpeed: 3, pauseScale: 0.2 });
+        await beat(120);
         fillDrafts();
         // fillDrafts / openPanelLoading overwrite the header with generic
         // "Drafting…" / hardcoded 1989 copy. Re-apply the campaign
@@ -6620,16 +6848,17 @@
       });
 
       await beat(400);
-      await appendScoutMsg('Want to run with this plan, or start from your own idea?', { thinkFor: 220, beatAfter: 300 });
+      await appendScoutMsg('Want to run with this plan, or see a couple of alternate angles? You can also type your own direction below.', { thinkFor: 220, beatAfter: 300 });
 
       let fork = await appendQuickReplies([
         { label: 'Go with this plan',   primary: true, value: 'go',
-          sub: 'Lock it in — I\'ll ask two more questions, then draft the posts.' },
-        { label: 'I have my own idea',                 value: 'own',
-          sub: "Type your angle. I'll build it around what's worked for you before." },
+          sub: 'Keep the anniversary countdown as the campaign spine, then answer two details before drafting.' },
         { label: 'Show me other angles',               value: 'other',
-          sub: 'Two alternatives from your past data — different tradeoffs.' },
+          sub: 'Compare two viable directions from your past data, each optimized for a different audience response.' },
       ]);
+      if (fork && fork !== 'go' && fork !== 'other') {
+        fork = { type: 'ownText', text: fork };
+      }
 
       // ---------------------------------------------------------------
       // "Other angles" — a lightweight side loop that pitches two
@@ -6641,19 +6870,35 @@
           "Two directions your data supports. Neither hits the reach of the 1989 build, but each wins on a different metric.",
           { thinkFor: 260, beatAfter: 260 }
         );
-        fork = await appendQuickReplies([
-          { label: 'Track-by-track appreciation',     value: 'go',
+        const altChoice = await appendQuickReplies([
+          { label: 'Track-by-track appreciation',     value: 'track-love',
             primary: true,
-            sub: 'Highest save-rate this year. Warmer replies, ~40% less reach.' },
-          { label: 'Fan-art + bracelet reposts',      value: 'go',
-            sub: 'Biggest follower lift (+180 last time). Slower start, peaks late in the week.' },
+            sub: 'Build a warmer series around fan memories and favorite lyrics. It tends to earn more saves and softer replies, with less reach than the anniversary countdown.' },
+          { label: 'Fan-art + bracelet reposts',      value: 'ugc',
+            sub: 'Invite community submissions and repostable moments. This is better for follower lift and fan participation, but it needs a slower ramp.' },
           { label: 'Back to the 1989 anniversary',    value: 'go',
-            sub: 'Return to the original plan — no changes.' },
-          { label: "Actually, I have my own idea",    value: 'own',
-            sub: "Type your angle instead — I'll build the plan around it." },
+            sub: 'Keep the stronger reach play and continue with the original anniversary-countdown plan.' },
         ]);
-        if (fork === 'go') {
-          await appendScoutMsg("Good pick — that one still leans on the anniversary build underneath. Two quick things and we're set.", { thinkFor: 240, beatAfter: 260 });
+        if (altChoice === 'track-love') {
+          plan.setValues({
+            Angle: 'Track-by-track appreciation + fan memories',
+            Format: 'Lyric carousel + memory prompt',
+            Timing: '4-post build-up, one favorite track per day',
+          });
+          await appendScoutMsg("Good pick. I shifted the plan toward fan memory and lyric saves while keeping the anniversary timing underneath. Two quick details and we're set.", { thinkFor: 240, beatAfter: 260 });
+          fork = 'go';
+        } else if (altChoice === 'ugc') {
+          plan.setValues({
+            Angle: 'Fan-art + friendship bracelet reposts',
+            Format: 'Submission prompt + repost carousel',
+            Timing: '4-post build-up, submissions first, finale on Oct 27',
+          });
+          await appendScoutMsg("Got it. I shifted the plan toward community submissions and repostable fan moments, with the anniversary as the finale. Two quick details and we're set.", { thinkFor: 240, beatAfter: 260 });
+          fork = 'go';
+        } else if (altChoice && altChoice !== 'go') {
+          fork = { type: 'ownText', text: altChoice };
+        } else {
+          fork = 'go';
         }
       }
 
@@ -6663,12 +6908,8 @@
       // guidance: "flag softly, go with user's instinct"), and reshapes
       // the plan around their angle before rejoining Path A.
       // ---------------------------------------------------------------
-      if (fork === 'own') {
-        await appendScoutMsg(
-          "Tell me what you've got in mind — an era, a moment, a post type, or just a rough thought. I'll build the plan around it, backed by what's worked for you before.",
-          { thinkFor: 240, beatAfter: 260 }
-        );
-        const userIdea = await awaitFreeText("Type your angle or idea…");
+      if (fork && fork.type === 'ownText') {
+        const userIdea = fork.text;
 
         await appendActionStates([
           { icon: 'i-search',    text: 'Checking this against your past posts…',
@@ -6726,14 +6967,11 @@
             sub: "Two quick questions on hook and timing, then I draft the posts." },
           { label: 'Keep it closer to my wording',              value: 'stay',
             sub: "I'll lean harder into your exact angle across every post." },
-          { label: "Change one thing",                  value: 'adjust',
-            sub: 'Tell me the single thing to swap or tighten.' },
         ]);
         if (bChoice === 'stay') {
           await appendScoutMsg("Done — I'll keep every post anchored to your exact wording.", { thinkFor: 220, beatAfter: 260 });
-        } else if (bChoice === 'adjust') {
-          const tweak = await awaitFreeText('What should I change?');
-          await appendScoutMsg("On it — folding in \"" + tweak + "\".", { thinkFor: 220, beatAfter: 280 });
+        } else if (bChoice && bChoice !== 'go') {
+          await appendScoutMsg("On it — folding in \"" + bChoice + "\".", { thinkFor: 220, beatAfter: 280 });
         }
       } else {
         // Path A — user accepted the original plan (or "other angles" landed back).
@@ -6745,7 +6983,8 @@
       //
       // For a fan account, the equivalent of "which offer" is "which
       // specific clue/hook does the carousel open on." Same shape: one
-      // data-backed default, one custom, one broader alternative.
+      // data-backed default and one broader alternative. Custom clues
+      // come through the composer instead of a redundant visible option.
       // ---------------------------------------------------------------
       await appendActionStates([
         { icon: 'i-tag',       text: 'Scanning what the fandom is talking about…',
@@ -6758,21 +6997,18 @@
         { thinkFor: 260, beatAfter: 300 }
       );
       const offerChoice = await appendQuickReplies([
-        { label: 'Open on "Cornelia Street"',   primary: true, value: '20',
-          sub: 'Ride the thread that\'s already active — highest reach ceiling this week.' },
-        { label: 'Pick a different clue',                     value: 'other',
-          sub: "Type the lyric, era, or theory you want the carousel to open on." },
+        { label: 'Open on "Cornelia Street"',   primary: true, value: 'cornelia',
+          sub: "Use the thread fans are already debating. It gives the opening post the clearest reach advantage this week." },
         { label: 'Open on a broad question',                  value: 'none',
-          sub: "Slower start, but casts a wider net across the fandom." },
+          sub: "Start with a fandom-wide prompt before revealing the theory. It is more inclusive, but the first post may build more slowly." },
       ]);
       let offerValue = '"Cornelia Street" theory hook';
-      if (offerChoice === 'other') {
-        const custom = await awaitFreeText('Which clue should we open on?');
-        offerValue = custom;
-        await appendScoutMsg('Got it — the carousel will open on "' + custom + '" and build from there.', { thinkFor: 200, beatAfter: 260 });
-      } else if (offerChoice === 'none') {
+      if (offerChoice === 'none') {
         offerValue = 'Broad-question opener';
         await appendScoutMsg("Understood — I'll open with a fandom-wide question and let the theory build in the swipes.", { thinkFor: 220, beatAfter: 280 });
+      } else if (offerChoice && offerChoice !== 'cornelia') {
+        offerValue = offerChoice;
+        await appendScoutMsg('Got it — the carousel will open on "' + offerChoice + '" and build from there.', { thinkFor: 200, beatAfter: 260 });
       }
 
       // ---------------------------------------------------------------
@@ -6794,20 +7030,17 @@
       );
       const timingChoice = await appendQuickReplies([
         { label: 'Use these times',   primary: true, value: 'thu',
-          sub: 'Thu 7 PM · Sat 10 AM · Sun 12 PM (anniversary) — your top posting slots.' },
-        { label: 'Pick my own start',                      value: 'fixed',
-          sub: "Type the day and time you want the first post to go live." },
+          sub: 'Thu 7 PM, Sat 10 AM, and Sun 12 PM match your strongest save windows, with the finale landing on anniversary day.' },
         { label: 'Tighten the arc',                     value: 'space',
-          sub: "Same posts, all four inside anniversary week (Thu → Sun)." },
+          sub: "Keep all four posts inside anniversary week, one per day from Thursday through Sunday, for a more concentrated countdown." },
       ]);
       let timingValue = 'Thu 7 PM launch, 4 posts across anniversary week';
-      if (timingChoice === 'fixed') {
-        const when = await awaitFreeText('When should the first post go live?');
-        timingValue = when + ' launch, 4 posts across the week';
-        await appendScoutMsg('Set — first post ' + when + ', then three more paced through the week.', { thinkFor: 200, beatAfter: 260 });
-      } else if (timingChoice === 'space') {
+      if (timingChoice === 'space') {
         await appendScoutMsg("Tightening the arc — all four inside anniversary week, one per day Thu to Sun.", { thinkFor: 220, beatAfter: 260 });
         timingValue = 'Thu–Sun run, one post per day';
+      } else if (timingChoice && timingChoice !== 'thu') {
+        timingValue = timingChoice + ' launch, 4 posts across the week';
+        await appendScoutMsg('Set — first post ' + timingChoice + ', then three more paced through the week.', { thinkFor: 200, beatAfter: 260 });
       }
 
       // ---------------------------------------------------------------
@@ -6843,13 +7076,10 @@
       await appendScoutMsg('Ready to draft it?', { thinkFor: 220, beatAfter: 260 });
       const genChoice = await appendQuickReplies([
         { label: 'Draft the posts',   primary: true, value: 'go',
-          sub: "I'll write all 4 in your voice and line them up on the right." },
-        { label: 'Change something first',                       value: 'change',
-          sub: 'Tell me what to swap — I\'ll reshape before drafting.' },
+          sub: "Create four ready-to-edit drafts in the Swiftie Central voice and load them into the campaign panel." },
       ]);
-      if (genChoice === 'change') {
-        const tweak = await awaitFreeText('What should I change?');
-        await appendScoutMsg("On it — folding in \"" + tweak + "\".", { thinkFor: 220, beatAfter: 280 });
+      if (genChoice && genChoice !== 'go') {
+        await appendScoutMsg("On it — folding in \"" + genChoice + "\" before I draft.", { thinkFor: 220, beatAfter: 280 });
       }
 
       await appendScoutMsg('Drafting now.', { thinkFor: 200, beatAfter: 300 });
