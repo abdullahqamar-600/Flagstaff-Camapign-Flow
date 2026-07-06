@@ -503,9 +503,13 @@
   }
   /* In the drafting phase specifically, the chat column matches the
      composer's floating pill width so the two feel like one column. */
+  /* Responsive chat column — scales with viewport instead of a fixed
+     cap. Floor keeps it usable on narrow screens; ceiling keeps it
+     from sprawling on wide monitors. Below 1200px it hugs the
+     available column. */
   body.has-drafts .cc-chat,
   body.has-drafts.has-side-panel .cc-chat {
-    max-width: 480px;
+    max-width: clamp(340px, 28vw, 560px);
     margin: 0;
   }
 
@@ -556,10 +560,10 @@
     flex-direction: column;
     align-items: stretch;
     gap: 24px;
-    /* Cap the chat column narrower than the composer's pill so the
-       conversation reads as a proper chat feed rather than stretching
-       end-to-end across the left half of the viewport. */
-    max-width: 480px;
+    /* Responsive chat column — scales with viewport width. Floor
+       keeps the feed usable on narrow screens; ceiling keeps it from
+       sprawling on wide monitors. */
+    max-width: clamp(340px, 28vw, 560px);
     margin: 0;
     width: 100%;
     box-sizing: border-box;
@@ -587,7 +591,10 @@
     left: calc(var(--sidebar-w, 80px) + 40px);
     right: calc(var(--cc-panel-w, 900px) + 40px);
     bottom: 40px; /* card bottom (24) + inner padding (16) */
-    max-width: 636px;
+    /* Composer pill tracks the chat width responsively — always a
+       little wider than the chat feed so the two feel like one column
+       without the composer looking cramped. */
+    max-width: clamp(400px, 34vw, 660px);
     padding: 0;
     z-index: 15;
     margin: 0 auto;
