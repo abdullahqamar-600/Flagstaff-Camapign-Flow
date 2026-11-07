@@ -7175,119 +7175,84 @@
           short: 'fandom calendar',
           detail: '1989 anniversary lands Oct 27 — five days out.',
           hold: 1150 },
-        { icon: 'i-sparkle',   text: 'Putting a plan together…',
-          short: 'plan',
-          detail: '5-post build-up, theory + poll centrepieces, Instagram + TikTok.',
-          hold: 900 },
+        { icon: 'i-sparkle',   text: 'Sketching three directions your data supports…',
+          short: 'three directions',
+          detail: 'Anniversary countdown, track-by-track appreciation, and fan-art reposts each win on a different metric.',
+          hold: 1000 },
       ]);
 
-      // Scout's Turn 1 opener adapts to the intent the user picked at
-      // the landing (or typed in the composer). The plan itself is close
-      // in each case — the 1989 anniversary build is the strongest bet
-      // — but the framing changes so the message feels earned, not canned.
-      const openerText = shape.openingScout ||
-        "Big week coming up — the 1989 anniversary lands Oct 27, and your anniversary throwback posts are consistently your highest-reach content. Here's the plan I'd build on:";
-      const planSubtitle = shape.kind === 'Holiday'
-        ? 'Timed to the 1989 anniversary on Oct 27.'
-        : shape.kind === 'Trend'
-        ? "Sized to this week's Track 5 theory chatter."
-        : shape.kind === 'Your own'
-        ? "Shaped around your idea, backed by what your fandom engages with."
-        : "Rebuilt from your highest-comment format this year.";
+      // Scout's opener reframes the intent as three directions to pick
+      // between. If the user committed a shape at landing, its
+      // openingScout still fires first as scene-setting so the message
+      // feels earned — then the uniform "three directions" prompt
+      // frames the choice consistently across all shapes.
+      if (shape.openingScout) {
+        await appendScoutMsg(shape.openingScout, { thinkFor: 260, beatAfter: 300 });
+      }
+      await appendScoutMsg(
+        "Here are three directions your data supports, each optimized for a different metric. Pick one to build on, or type your own angle below.",
+        { thinkFor: shape.openingScout ? 180 : 260, beatAfter: 320 }
+      );
 
-      await appendScoutMsg(openerText, { thinkFor: 260, beatAfter: 320 });
+      // Direction library — each entry carries the values the final
+      // plan card will render, so the pick is the source of truth for
+      // Angle/Format/Timing downstream. Own-idea path builds a synthetic
+      // direction with the user's angle woven in.
+      const DIRECTIONS = {
+        anniversary: {
+          label: '1989 anniversary — countdown + fan memories',
+          angle: '1989 anniversary — countdown + fan memories',
+          angleMeta: 'Your highest-reach theme this year.',
+          format: 'Easter-egg carousel + mid-week fan poll',
+          formatMeta: 'Your two highest-engagement post types.',
+          defaultTiming: '5-post build-up, landing on Oct 27',
+          defaultTimingMeta: 'Aligned to the 1989 anniversary drop day.',
+          subtitle: 'Timed to the 1989 anniversary on Oct 27.',
+          ack: "Good pick — the stronger reach play. Two quick questions and we're set to draft.",
+        },
+        'track-love': {
+          label: 'Track-by-track appreciation',
+          angle: 'Track-by-track appreciation + fan memories',
+          angleMeta: 'Softer replies + more saves than the anniversary countdown.',
+          format: 'Lyric carousel + memory prompt',
+          formatMeta: 'Warmer format your community engages with deeply.',
+          defaultTiming: '4-post build-up, one favorite track per day',
+          defaultTimingMeta: 'Paced across anniversary week.',
+          subtitle: 'Warmer arc — fan memories and lyric saves lead reach.',
+          ack: "Good pick. I'll lean into fan memory and lyric saves, with the anniversary timing underneath. Two quick questions and we're set.",
+        },
+        ugc: {
+          label: 'Fan-art + bracelet reposts',
+          angle: 'Fan-art + friendship bracelet reposts',
+          angleMeta: 'Your best format for follower lift and participation.',
+          format: 'Submission prompt + repost carousel',
+          formatMeta: 'Invites community submissions and repostable moments.',
+          defaultTiming: '4-post build-up, submissions first, finale on Oct 27',
+          defaultTimingMeta: 'Anniversary as the finale after the submissions arc.',
+          subtitle: 'Community-first arc — submissions build to the finale.',
+          ack: "Got it. I'll shift toward community submissions and repostable moments, with the anniversary as the finale. Two quick questions and we're set.",
+        },
+      };
 
-      const plan = appendPlanCard({
-        title: 'The plan',
-        subtitle: planSubtitle,
-        sections: [
-          { label: 'Goal',     value: 'Grow reach + follower engagement',
-            meta: "Same primary goal as your top anniversary posts this year." },
-          { label: 'Who',      value: 'Core Swifties + eras-curious lookalikes',
-            meta: 'Target: 42k reach · 3.1k saves · 890 comments.' },
-          { label: 'Angle',    value: '1989 anniversary — countdown + fan memories',
-            meta: 'Your highest-reach theme this year.' },
-          { label: 'Format',   value: 'Easter-egg carousel + mid-week fan poll',
-            meta: 'Your two highest-engagement post types.' },
-          { label: 'Channels', value: 'Instagram + TikTok',
-            meta: "Where your account moves fastest." },
-          { label: 'Timing',   value: shape.kind === 'Holiday'
-              ? '5-post build-up, landing on Oct 27'
-              : shape.kind === 'Trend'
-              ? '3-post theory sprint, live while the chatter is up'
-              : '5-post build-up across the week',
-            meta: shape.kind === 'Holiday'
-              ? 'Aligned to the 1989 anniversary drop day.'
-              : shape.kind === 'Trend'
-              ? 'Ride the theory wave before it settles.'
-              : "Save the biggest post for the anniversary itself." },
-        ],
-      });
-
-      await beat(400);
-      await appendScoutMsg('Want to run with this plan, or see a couple of alternate angles? You can also type your own direction below.', { thinkFor: 220, beatAfter: 300 });
-
-      let fork = await appendQuickReplies([
-        { label: 'Go with this plan',   primary: true, value: 'go',
-          sub: 'Keep the anniversary countdown as the campaign spine, then answer two details before drafting.' },
-        { label: 'Show me other angles',               value: 'other',
-          sub: 'Compare two viable directions from your past data, each optimized for a different audience response.' },
+      const dirChoice = await appendQuickReplies([
+        { label: DIRECTIONS.anniversary.label, primary: true, value: 'anniversary',
+          sub: 'Strongest reach play — countdown carousel + fan poll paced to Oct 27.' },
+        { label: DIRECTIONS['track-love'].label, value: 'track-love',
+          sub: 'Warmer series around fan memories and favorite lyrics. More saves, softer replies, less reach than the anniversary.' },
+        { label: DIRECTIONS.ugc.label, value: 'ugc',
+          sub: 'Invite community submissions and repostable moments. Best for follower lift, needs a slower ramp.' },
       ]);
-      if (fork && fork !== 'go' && fork !== 'other') {
-        fork = { type: 'ownText', text: fork };
-      }
 
-      // ---------------------------------------------------------------
-      // "Other angles" — a lightweight side loop that pitches two
-      // alternatives, then rejoins the main fork. Keeps the user in
-      // exploratory mode without leaving the plan-first arc.
-      // ---------------------------------------------------------------
-      if (fork === 'other') {
-        await appendScoutMsg(
-          "Two directions your data supports. Neither hits the reach of the 1989 build, but each wins on a different metric.",
-          { thinkFor: 260, beatAfter: 260 }
-        );
-        const altChoice = await appendQuickReplies([
-          { label: 'Track-by-track appreciation',     value: 'track-love',
-            primary: true,
-            sub: 'Build a warmer series around fan memories and favorite lyrics. It tends to earn more saves and softer replies, with less reach than the anniversary countdown.' },
-          { label: 'Fan-art + bracelet reposts',      value: 'ugc',
-            sub: 'Invite community submissions and repostable moments. This is better for follower lift and fan participation, but it needs a slower ramp.' },
-          { label: 'Back to the 1989 anniversary',    value: 'go',
-            sub: 'Keep the stronger reach play and continue with the original anniversary-countdown plan.' },
-        ]);
-        if (altChoice === 'track-love') {
-          plan.setValues({
-            Angle: 'Track-by-track appreciation + fan memories',
-            Format: 'Lyric carousel + memory prompt',
-            Timing: '4-post build-up, one favorite track per day',
-          });
-          await appendScoutMsg("Good pick. I shifted the plan toward fan memory and lyric saves while keeping the anniversary timing underneath. Two quick details and we're set.", { thinkFor: 240, beatAfter: 260 });
-          fork = 'go';
-        } else if (altChoice === 'ugc') {
-          plan.setValues({
-            Angle: 'Fan-art + friendship bracelet reposts',
-            Format: 'Submission prompt + repost carousel',
-            Timing: '4-post build-up, submissions first, finale on Oct 27',
-          });
-          await appendScoutMsg("Got it. I shifted the plan toward community submissions and repostable fan moments, with the anniversary as the finale. Two quick details and we're set.", { thinkFor: 240, beatAfter: 260 });
-          fork = 'go';
-        } else if (altChoice && altChoice !== 'go') {
-          fork = { type: 'ownText', text: altChoice };
-        } else {
-          fork = 'go';
-        }
-      }
-
-      // ---------------------------------------------------------------
-      // PATH B — user has their own idea. Scout captures it, checks it
-      // against past results, flags a soft misalignment (per user
-      // guidance: "flag softly, go with user's instinct"), and reshapes
-      // the plan around their angle before rejoining Path A.
-      // ---------------------------------------------------------------
-      if (fork && fork.type === 'ownText') {
-        const userIdea = fork.text;
-
+      // Resolve direction. Known keys map straight to the library; any
+      // other value is the user's own typed idea — Scout does an honest
+      // read against past data, then reshapes a direction around it
+      // ("flag softly, go with user's instinct").
+      let direction;
+      if (DIRECTIONS[dirChoice]) {
+        direction = DIRECTIONS[dirChoice];
+        await appendScoutMsg(direction.ack, { thinkFor: 240, beatAfter: 260 });
+      } else {
+        const userIdea = dirChoice || '';
         await appendActionStates([
           { icon: 'i-search',    text: 'Checking this against your past posts…',
             short: 'past posts',
@@ -7298,61 +7263,22 @@
             detail: 'Two comparables from the last two months — mixed on reach.',
             hold: 1250 },
         ]);
-
-        // Soft flag — honest read, then defer to the user's instinct.
         await appendScoutMsg(
-          'Got it — "' + userIdea + '". Honest read: your anniversary and theory posts pull ~2× the reach of straight posts. This can still land, and I\'ll frame it to hit your strongest engagement pattern:',
+          'Got it — "' + userIdea + '". Honest read: your anniversary and theory posts pull ~2× the reach of straight posts. This can still land, and I\'ll frame it to hit your strongest engagement pattern.',
           { thinkFor: 320, beatAfter: 340 }
         );
-
-        // Re-render the plan with the user's angle woven in. We reuse
-        // the same card component so pencil edits still work.
-        // Drop the old plan card so the surface stays clean.
-        plan.element.style.transition = 'opacity 260ms ease, transform 260ms ease';
-        plan.element.style.opacity = '0';
-        plan.element.style.transform = 'translateY(-4px)';
-        setTimeout(() => plan.element.remove(), 280);
-        await beat(300);
-
         const reshapedIdea = userIdea.length > 60 ? userIdea.slice(0, 57) + '…' : userIdea;
-        const plan2 = appendPlanCard({
-          title: 'The plan',
-          subtitle: "Shaped around your angle, backed by what your fandom engages with.",
-          sections: [
-            { label: 'Goal',     value: 'Grow reach + follower engagement',
-              meta: "Kept reach-first so we don't lose momentum into the anniversary." },
-            { label: 'Who',      value: 'Core Swifties + eras-curious lookalikes',
-              meta: 'Same audience shape as your last three top posts.' },
-            { label: 'Angle',    value: reshapedIdea,
-              meta: 'Your idea, framed as a theory rather than confirmed fact.' },
-            { label: 'Format',   value: 'Theory/easter-egg carousel + fan poll',
-              meta: 'Your two highest-engagement post types.' },
-            { label: 'Channels', value: 'Instagram + TikTok',
-              meta: 'Where your account moves fastest.' },
-            { label: 'Timing',   value: '5-post build-up across the week',
-              meta: "Saving the biggest post for anniversary day itself." },
-          ],
-        });
-        // Replace our handle so downstream reads pick up the reshaped plan.
-        plan.element = plan2.element;
-        plan.readValues = plan2.readValues;
-
-        await beat(400);
-        await appendScoutMsg('Run with this plan, or adjust it first?', { thinkFor: 240, beatAfter: 280 });
-        const bChoice = await appendQuickReplies([
-          { label: 'Run with it',       primary: true, value: 'go',
-            sub: "Two quick questions on hook and timing, then I draft the posts." },
-          { label: 'Keep it closer to my wording',              value: 'stay',
-            sub: "I'll lean harder into your exact angle across every post." },
-        ]);
-        if (bChoice === 'stay') {
-          await appendScoutMsg("Done — I'll keep every post anchored to your exact wording.", { thinkFor: 220, beatAfter: 260 });
-        } else if (bChoice && bChoice !== 'go') {
-          await appendScoutMsg("On it — folding in \"" + bChoice + "\".", { thinkFor: 220, beatAfter: 280 });
-        }
-      } else {
-        // Path A — user accepted the original plan (or "other angles" landed back).
-        await appendScoutMsg("Solid. Two quick questions and we're set to draft.", { thinkFor: 240, beatAfter: 280 });
+        direction = {
+          label: reshapedIdea,
+          angle: reshapedIdea,
+          angleMeta: 'Your idea, framed as a theory rather than confirmed fact.',
+          format: 'Theory/easter-egg carousel + fan poll',
+          formatMeta: 'Your two highest-engagement post types.',
+          defaultTiming: '5-post build-up across the week',
+          defaultTimingMeta: 'Saving the biggest post for anniversary day itself.',
+          subtitle: 'Shaped around your angle, backed by what your fandom engages with.',
+        };
+        await appendScoutMsg("Two quick questions and we're set to draft.", { thinkFor: 220, beatAfter: 260 });
       }
 
       // ---------------------------------------------------------------
@@ -7421,72 +7347,139 @@
       }
 
       // ---------------------------------------------------------------
-      // TURN 4 — Final campaign brief before generate.
+      // TURN 4 — Images + content, then the full plan for approval.
       //
-      // A compact structured card gives the final confirmation more
-      // weight and makes each campaign decision easy to scan.
+      // Before Scout locks the plan, two lightweight asks capture how
+      // the user wants imagery handled and any specific content to
+      // weave in. Both answers are surfaced as rows in the final plan
+      // card so approval reads back the complete shape.
       // ---------------------------------------------------------------
-      const pv = plan.readValues();
-      const angleShort = (pv['Angle'] || '1989 anniversary — countdown + fan memories').replace(/["']/g, '');
-      await appendScoutMsg("Here's the shape we landed on:", { thinkFor: 300, beatAfter: 260 });
-
-      const playback = el('div', 'cc-playback',
-        '<div class="cc-playback__head">' +
-          '<div>' +
-            '<span class="cc-playback__eyebrow">Campaign brief</span>' +
-            '<strong class="cc-playback__title"></strong>' +
-          '</div>' +
-          '<span class="cc-playback__badge">Ready to draft</span>' +
-        '</div>' +
-        '<div class="cc-playback__grid">' +
-          '<div class="cc-playback__item">' +
-            '<span class="cc-playback__label">Goal</span>' +
-            '<span class="cc-playback__value cc-playback__part--goal"></span>' +
-          '</div>' +
-          '<div class="cc-playback__item">' +
-            '<span class="cc-playback__label">Opening hook</span>' +
-            '<span class="cc-playback__value cc-playback__part--offer"></span>' +
-          '</div>' +
-          '<div class="cc-playback__item">' +
-            '<span class="cc-playback__label">Posts</span>' +
-            '<span class="cc-playback__value cc-playback__part--channels"></span>' +
-          '</div>' +
-          '<div class="cc-playback__item">' +
-            '<span class="cc-playback__label">Timing</span>' +
-            '<span class="cc-playback__value cc-playback__part--timing"></span>' +
-          '</div>' +
-        '</div>'
+      await appendScoutMsg(
+        "Two more things before I lock the plan — how do you want to handle images across the posts?",
+        { thinkFor: 240, beatAfter: 280 }
       );
-      playback.querySelector('.cc-playback__title').textContent = angleShort;
-      playback.querySelector('.cc-playback__part--goal').textContent = 'Reach-focused, built for saves and replies';
-      playback.querySelector('.cc-playback__part--offer').textContent = offerValue;
-      playback.querySelector('.cc-playback__part--channels').textContent = '4 drafts across Instagram and TikTok';
-      playback.querySelector('.cc-playback__part--timing').textContent = timingValue.toLowerCase();
-      chatlog.appendChild(playback);
-      scrollDown();
-
-      await beat(500);
-      await appendScoutMsg('Ready to draft it?', { thinkFor: 220, beatAfter: 260 });
-      const genChoice = await appendQuickReplies([
-        { label: 'Draft the posts',   primary: true, value: 'go',
-          sub: "Create four ready-to-edit drafts in the Swiftie Central voice and load them into the campaign panel." },
+      const imageChoice = await appendQuickReplies([
+        { label: "I'll upload my own images", primary: true, value: 'upload',
+          sub: 'Attach your imagery and Scout maps each image to the best-fit post.' },
+        { label: 'Generate images for me',                value: 'generate',
+          sub: 'Scout picks or generates imagery aligned to each post.' },
+        { label: 'Decide per post later',                 value: 'skip',
+          sub: 'Ship drafts without imagery and choose upload or generate inside each card.' },
       ]);
-      if (genChoice && genChoice !== 'go') {
-        await appendScoutMsg("On it — folding in \"" + genChoice + "\" before I draft.", { thinkFor: 220, beatAfter: 280 });
+      let imagesValue = 'Decide per post later';
+      let imagesMeta  = "You'll pick upload or generate inside each draft card.";
+      if (imageChoice === 'upload') {
+        imagesValue = "Uploading your own imagery";
+        imagesMeta  = 'Scout will map each upload to the best-fit post.';
+        await appendScoutMsg("Good — drop them in and I'll place each one where it lands hardest.", { thinkFor: 200, beatAfter: 260 });
+      } else if (imageChoice === 'generate') {
+        imagesValue = 'Scout-generated imagery per post';
+        imagesMeta  = "Aligned to each post's hook and mood.";
+        await appendScoutMsg("On it — I'll generate imagery tuned to each post as I draft.", { thinkFor: 200, beatAfter: 260 });
+      } else if (imageChoice && imageChoice !== 'skip') {
+        imagesValue = imageChoice;
+        imagesMeta  = 'Your imagery direction, applied per post.';
+        await appendScoutMsg("Got it — \"" + imageChoice + "\" is how I'll handle imagery.", { thinkFor: 200, beatAfter: 260 });
       }
 
-      await appendScoutMsg('Drafting now.', { thinkFor: 200, beatAfter: 300 });
+      await appendScoutMsg(
+        "And any specific content — lyric callbacks, hashtags, links, or messaging — you want me to weave in?",
+        { thinkFor: 220, beatAfter: 280 }
+      );
+      const contentChoice = await appendQuickReplies([
+        { label: 'Standard Swiftie Central voice', primary: true, value: 'standard',
+          sub: 'Keep lyric callbacks, hashtags, and community language on by default.' },
+        { label: 'No extras — clean voice',                          value: 'clean',
+          sub: 'Skip hashtags and lyric callbacks so the writing carries more weight.' },
+      ]);
+      let contentValue = 'Standard Swiftie Central voice';
+      let contentMeta  = 'Lyric callbacks and hashtags on by default.';
+      if (contentChoice === 'clean') {
+        contentValue = 'Clean voice';
+        contentMeta  = 'No hashtags or lyric callbacks — writing carries the surface.';
+        await appendScoutMsg("Done — cleaner voice, no callbacks or hashtags.", { thinkFor: 200, beatAfter: 260 });
+      } else if (contentChoice && contentChoice !== 'standard') {
+        contentValue = contentChoice;
+        contentMeta  = 'Woven in verbatim wherever it fits.';
+        await appendScoutMsg("Got it — I'll fold \"" + contentChoice + "\" into the drafts.", { thinkFor: 200, beatAfter: 260 });
+      }
+
+      // ---------------------------------------------------------------
+      // The plan — full card, presented at the end for a single
+      // approval. Values are pulled from every earlier turn so the
+      // card reads as a receipt of the conversation.
+      // ---------------------------------------------------------------
+      await appendScoutMsg("Here's the plan I'll build:", { thinkFor: 300, beatAfter: 320 });
+
+      const timingMetaCopy = timingChoice === 'space'
+        ? 'One post per day, Thu through Sun.'
+        : timingChoice === 'thu'
+        ? "Thu evening + Sat morning + Sun noon — your strongest save windows."
+        : 'Custom cadence, four posts across the week.';
+      const offerMetaCopy = offerChoice === 'cornelia'
+        ? 'Loudest thread in the fandom right now — 2.1× the next-highest.'
+        : offerChoice === 'none'
+        ? 'Broad opener before the theory reveals in the swipes.'
+        : 'Your custom hook, folded into the opening post.';
+
+      appendPlanCard({
+        title: 'The plan',
+        subtitle: direction.subtitle,
+        sections: [
+          { label: 'Goal',         value: 'Grow reach + follower engagement',
+            meta: "Same primary goal as your top anniversary posts this year." },
+          { label: 'Who',          value: 'Core Swifties + eras-curious lookalikes',
+            meta: 'Target: 42k reach · 3.1k saves · 890 comments.' },
+          { label: 'Angle',        value: direction.angle,
+            meta: direction.angleMeta },
+          { label: 'Format',       value: direction.format,
+            meta: direction.formatMeta },
+          { label: 'Channels',     value: 'Instagram + TikTok',
+            meta: 'Where your account moves fastest.' },
+          { label: 'Opening hook', value: offerValue,
+            meta: offerMetaCopy },
+          { label: 'Timing',       value: timingValue,
+            meta: timingMetaCopy },
+          { label: 'Images',       value: imagesValue,
+            meta: imagesMeta },
+          { label: 'Content',      value: contentValue,
+            meta: contentMeta },
+        ],
+      });
+
+      await beat(500);
+      await appendScoutMsg('Approve the plan and I\'ll draft the posts?', { thinkFor: 240, beatAfter: 280 });
+      const genChoice = await appendQuickReplies([
+        { label: 'Approve — draft the posts', primary: true, value: 'go',
+          sub: "Create four ready-to-edit drafts in the Swiftie Central voice and load them into the campaign panel." },
+        { label: 'Tweak the plan first',                     value: 'tweak',
+          sub: 'Tap any field on the plan to edit it before I draft.' },
+      ]);
+      if (genChoice === 'tweak') {
+        await appendScoutMsg("Tap any field on the plan to edit it — I'll wait.", { thinkFor: 220, beatAfter: 260 });
+        await beat(1400);
+        await appendScoutMsg("Looks good — drafting now.", { thinkFor: 220, beatAfter: 300 });
+      } else if (genChoice && genChoice !== 'go') {
+        await appendScoutMsg("On it — folding in \"" + genChoice + "\" before I draft.", { thinkFor: 220, beatAfter: 280 });
+        await appendScoutMsg('Drafting now.', { thinkFor: 200, beatAfter: 300 });
+      } else {
+        await appendScoutMsg('Drafting now.', { thinkFor: 200, beatAfter: 300 });
+      }
+
       setStatus('drafting');
 
       openPanelLoading();
 
       const proc = appendProcLine();
-      // No imagery step during planning — post cards ship without
-      // images and let the user choose (upload or generate) per post.
       const steps = [
         { icon: 'i-book-open',   text: 'Pulling your Swiftie voice profile' },
         { icon: 'i-trending',    text: 'Reading fandom chatter around the 1989 anniversary' },
-        { icon: 'i-pencil-line', text: 'Drafting four posts around the theory + poll build-up' },
+        { icon: 'i-pencil-line', text: 'Drafting four posts around ' + direction.label.toLowerCase() },
+        ...(imageChoice === 'generate'
+          ? [{ icon: 'i-sparkle', text: 'Generating imagery tuned to each post' }]
+          : imageChoice === 'upload'
+          ? [{ icon: 'i-sparkle', text: 'Mapping your uploads to the best-fit posts' }]
+          : []),
         { icon: 'i-check',       text: 'Ready' },
       ];
       for (const s of steps) {

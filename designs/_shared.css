@@ -5,7 +5,7 @@
      <link rel="stylesheet" href="./_shared.css" />
    ========================================================================= */
 
-@import url("../design-system/tokens.css");
+@import url("../design-system/tokens.css?v=3");
 /* Font stack lives in tokens.css (--font-sans). SF Pro Display is preferred
    via -apple-system on macOS; other systems fall through to Inter (loaded by
    poc/index.html) and finally system-ui. Do NOT re-import a webfont here. */

@@ -47,6 +47,11 @@
   --neutral-300: #BDBDBD;   /* MUI grey.400 — observed */
   --neutral-400: #9AA4B2;   /* cool slate — observed in Figma */
   --neutral-500: #71717A;
+  /* neutral-500 measures 4.44:1 on the --surface-canvas (#F5F5F7) the product
+     mostly sits on, so it fails AA wherever tertiary text lands off-white —
+     breadcrumb separators, splash Skip/Back, the "Coming soon" pill. 550 is the
+     same hue, dark enough to pass on both: 6.32:1 on white, 5.80:1 on canvas. */
+  --neutral-550: #5F5F68;
   --neutral-600: #52525B;
   --neutral-700: #3F3F46;
   --neutral-800: #27272A;
@@ -96,7 +101,7 @@
   /* Text */
   --text-primary:      var(--neutral-900);
   --text-secondary:    var(--neutral-600);
-  --text-tertiary:     var(--neutral-500);
+  --text-tertiary:     var(--neutral-550);
   --text-disabled:     var(--neutral-400);
   --text-on-primary:   var(--neutral-0);
   --text-link:         var(--indigo-500);

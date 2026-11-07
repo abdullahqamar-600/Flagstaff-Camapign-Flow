@@ -1,4 +1,4 @@
-@import url("../design-system/tokens.css");
+@import url("../design-system/tokens.css?v=3");
 /* Type stack:
    - macOS resolves to actual SF Pro via -apple-system / BlinkMacSystemFont
    - Other OSes use Inter (loaded below) as the closest open-source SF clone */
@@ -1347,8 +1347,12 @@ a { color: var(--text-link); text-decoration: none; }
    Demo controls — compact icon-only presenter affordance.
    ========================================================================= */
 .demo-ctl {
+  /* Hidden for now — the restart / skip pill is a presenter aid, not product.
+     The element stays in the DOM so bindDemoControls() still binds cleanly;
+     delete this line to bring the pill back. */
+  display: none;
   position: fixed; bottom: var(--space-3); right: var(--space-3);
-  display: flex; gap: 4px;
+  gap: 4px;
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -2807,39 +2811,49 @@ body.mode-hero .conv__stream {
    gradient wash. Reads as ambient "Scout is building this." */
 .kb-block__bloom {
   position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 33%;
+  /* Spans the FULL tile, not just the bottom third. A 33%-tall box with
+     overflow:hidden cut the blobs off along a straight line across the
+     middle of the card — the seam we're avoiding. The wash is instead
+     shaped by the mask below, which ramps from fully transparent at the
+     top to fully opaque at the bottom, so it has no edge of its own. */
+  inset: 0;
   pointer-events: none;
   overflow: hidden;
-  border-bottom-left-radius: inherit;
-  border-bottom-right-radius: inherit;
+  border-radius: inherit;
   z-index: 0;
+  -webkit-mask-image: linear-gradient(180deg, transparent 30%, #000 95%);
+          mask-image: linear-gradient(180deg, transparent 30%, #000 95%);
 }
 .kb-block__bloom-blob {
   position: absolute;
   border-radius: 999px;
   /* Light purple, low saturation. The three blobs vary in size and
-     drift on offset cycles so the gradient never settles. */
+     drift on offset cycles so the gradient never settles. The blur used
+     to come from a backdrop-filter veil above them; it lives on the blobs
+     themselves now, so nothing renders a clipped blur region. */
   background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.85), rgba(167, 139, 250, 0) 70%);
-  filter: blur(2px);
-  opacity: 0.65;
+  filter: blur(14px);
+  opacity: 0.7;
 }
+/* Sizes/offsets are the same absolute geometry as before, re-based from the
+   old 33%-tall parent to the full-height one (e.g. 220% × 33% ≈ 73%), so the
+   drift keyframes below still read identically. */
 .kb-block__bloom-blob--a {
-  width: 70%; height: 220%;
-  left: -10%; bottom: -90%;
+  width: 70%; height: 73%;
+  left: -10%; bottom: -30%;
   animation: kbBloomDriftA 5.6s ease-in-out infinite;
   background: radial-gradient(circle at 50% 50%, rgba(196, 181, 253, 0.95), rgba(196, 181, 253, 0) 70%);
 }
 .kb-block__bloom-blob--b {
-  width: 50%; height: 180%;
-  left: 30%; bottom: -70%;
+  width: 50%; height: 59%;
+  left: 30%; bottom: -23%;
   animation: kbBloomDriftB 7.2s ease-in-out infinite;
   background: radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.80), rgba(167, 139, 250, 0) 70%);
   animation-delay: -1.8s;
 }
 .kb-block__bloom-blob--c {
-  width: 40%; height: 150%;
-  left: 55%; bottom: -60%;
+  width: 40%; height: 50%;
+  left: 55%; bottom: -20%;
   animation: kbBloomDriftC 8.4s ease-in-out infinite;
   background: radial-gradient(circle at 50% 50%, rgba(216, 180, 254, 0.85), rgba(216, 180, 254, 0) 70%);
   animation-delay: -3.4s;
@@ -2856,18 +2870,17 @@ body.mode-hero .conv__stream {
   0%, 100% { transform: translate(0, 0)        scale(1); }
   50%      { transform: translate(14%, -6%)    scale(0.92); }
 }
-/* The veil sits ABOVE the blobs and blurs them into a soft wash. The
-   gradient overlay also fades the top edge of the bloom into the block,
-   so there's no hard seam where the bottom third begins. */
+/* The veil sits ABOVE the blobs and keeps the purple pale enough for the
+   "Building…" label to stay legible. It no longer carries a backdrop-filter:
+   a backdrop blur is only computed inside its own box, so it painted a hard
+   edge wherever that box ended. The softness comes from the blobs' own blur
+   and the parent's mask instead. */
 .kb-block__bloom-veil {
   position: absolute;
   inset: 0;
-  backdrop-filter: blur(14px) saturate(135%);
-  -webkit-backdrop-filter: blur(14px) saturate(135%);
   background: linear-gradient(180deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0.30) 40%,
-    rgba(255, 255, 255, 0.10) 100%);
+    rgba(255, 255, 255, 0.50) 55%,
+    rgba(255, 255, 255, 0.12) 100%);
 }
 .kb-block__status {
   position: relative;
@@ -3518,6 +3531,12 @@ body.mode-hero .conv__stream {
   padding: var(--space-4);
   gap: var(--space-2);
   overflow: hidden;
+  /* Collapsed tiles render as <button>; undo the UA centring and inherit type
+     so the markup change is invisible. */
+  text-align: left;
+  font: inherit;
+  -webkit-appearance: none;
+          appearance: none;
 }
 .kb-block__title {
   font-size: var(--text-base);
@@ -4777,22 +4796,31 @@ body.mode-hero .conv__stream {
    card sits centred in the chat column; the 1st and 3rd cards overflow
    on either side so the user reads the centre option as the headline pick.
    The list itself extends past the 720px column boundary, centred. */
+/* Three 360px cards will not fit a 720px chat column, and every attempt to
+   make them has produced a clipped row.
+
+   First it was a full-bleed breakout (`width: 100vw; margin-left: 50%;
+   transform: translateX(-50%)`) meant to let the outer cards peek into the
+   gutter — impossible, because `.conv__stream` is `overflow-x: hidden`, so the
+   peek was a hard clip and cards 1 and 3 were unreachable at every width.
+   Then it was a snap scroller: reachable, but macOS hides overlay scrollbars,
+   so it still *looked* clipped, which was the actual complaint.
+
+   So: stack them. Every card full width, nothing cut at any viewport, the
+   images get bigger, and comparison happens by scrolling the chat the way you
+   scroll everything else in this UI. */
 .directions-list {
   display: flex;
-  align-items: stretch;
-  justify-content: center;
-  gap: 24px;
-  /* Anchor at the centre of the chat column, then let the row grow as wide
-     as it needs — outer cards naturally overflow into the column gutter. */
-  width: 100vw;
-  max-width: 1280px;
-  margin-left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
-  padding: 8px 0 24px;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  margin-top: var(--space-2);
+  padding: var(--space-2) 0 var(--space-6);
 }
+
 .direction-card {
-  flex: 0 0 360px;
+  width: 100%;
+  max-width: 100%;
   display: flex; flex-direction: column;
   gap: 0;
   padding: 0;
@@ -4811,12 +4839,9 @@ body.mode-hero .conv__stream {
     opacity var(--duration-base) var(--ease-emphasized),
     transform var(--duration-base) var(--ease-emphasized);
 }
-/* Middle card — visually centred and elevated. */
-.directions-list .direction-card:nth-child(2) {
-  opacity: 1;
-  transform: scale(1);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-}
+/* (The middle card used to be scaled up and elevated as the "headline pick".
+   In a stack there is no middle, and singling one out would bias a choice
+   Scout presents as three equals.) */
 .direction-card:hover {
   opacity: 1;
   transform: scale(1);
@@ -4882,6 +4907,7 @@ body.mode-hero .conv__stream {
   width: calc(100% - 32px);
   margin: 4px 16px 12px;
   aspect-ratio: 16 / 10;
+  max-height: 260px;
   border-radius: 14px;
   overflow: hidden;
   display: flex; align-items: flex-end; justify-content: flex-start;
@@ -4988,39 +5014,27 @@ body.mode-hero .conv__stream {
   font-size: 13px;
   color: inherit;
 }
-.direction-card__action:hover { color: var(--primary); }
-.direction-card__action:nth-child(3):hover { color: #f91880; }
-.direction-card__action:nth-child(2):hover { color: #00ba7c; }
-.direction-card__pick { display: none; }
+/* The action row is a preview of X's chrome, not a control. It used to carry
+   per-icon brand hover colours (indigo / X-green / like-pink), which made 18
+   inert spans per screen hover exactly like real buttons and swallow the click
+   into the card. No hover, no pointer. */
+.direction-card__action { pointer-events: none; }
 
-@media (max-width: 820px) {
-  .directions-list { grid-template-columns: 1fr; }
+/* The card's only affordance label. This was `display: none`, so the user saw
+   three post mockups with no text saying they were choices — while the
+   equivalent tone card kept its "Pick this voice →" visible. */
+.direction-card__pick {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 0 var(--space-4) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--primary);
 }
+.direction-card--active .direction-card__pick,
+.direction-card--dim .direction-card__pick { visibility: hidden; }
 
 /* "Your first post" callout banner above the directions list. */
-.first-post-banner {
-  margin-left: 40px;
-  max-width: 820px;
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 12px;
-  background: color-mix(in oklab, var(--primary) 10%, transparent);
-  color: var(--primary);
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-}
-.first-post-banner__dot {
-  width: 6px; height: 6px;
-  border-radius: 999px;
-  background: var(--primary);
-  animation: postDot 1.5s ease-in-out infinite;
-}
-@keyframes postDot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-}
+/* .first-post-banner removed — see step_post_directions() in app.js. */
 
 /* =========================================================================
    PRE-CONVERSATION SPLASH — 3 screens, two-block layout
@@ -7270,4 +7284,276 @@ body.mode-campaigns #view-campaigns {
   .campaigns__grid { grid-template-columns: 1fr; }
   .campaigns__header { flex-direction: column; align-items: stretch; }
   .campaigns__actions { justify-content: flex-end; }
+}
+
+/* =========================================================================
+   BASELINE — focus, motion, wrapping.
+
+   Appended last on purpose. The file carries ~94 selectors declared more than
+   once, so these live at the end where they win without having to out-specify
+   the override layers. Everything here is a floor, not a style: it should be
+   invisible when a component already does the right thing.
+   ========================================================================= */
+
+/* ---- 1. Focus -----------------------------------------------------------
+   Every :focus-visible rule in the project was scoped to .campaigns /
+   .scout-view — views onboarding never enters — so the entire first-run flow
+   ran on the UA default ring, and the two text inputs killed even that with
+   `outline: none` and no substitute.
+
+   Two-tone ring: a dark inner edge plus an indigo halo. A single-colour ring
+   disappears against the frosted and tinted surfaces this UI uses (quick-reply
+   pills at 40% white, the drawer at 86% + blur). */
+:focus-visible {
+  outline: 2px solid var(--neutral-900);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--shadow-focus-ring-color, rgba(91, 91, 245, 0.45));
+  border-radius: var(--radius-xs);
+}
+/* Inputs sit inside a styled wrapper, so the ring belongs on the wrapper. */
+.composer-pill:focus-within,
+.url-inline:focus-within,
+.post-editor:focus-within {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-focus-ring);
+}
+.composer-pill:focus-within :focus-visible,
+.url-inline:focus-within :focus-visible,
+.post-editor:focus-within :focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+/* Keyboard-only affordance to jump the 13 chrome stops before the chat. */
+.skip-link {
+  position: absolute; left: var(--space-3); top: -100px;
+  z-index: var(--z-toast, 9999);
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface-raised); color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  transition: top var(--duration-base) var(--ease-standard);
+}
+.skip-link:focus { top: var(--space-3); }
+
+/* ---- 2. Motion ----------------------------------------------------------
+   §9: "Motion runs once on entry and stays still during reading." There are 25
+   `infinite` animations in this file and the four hand-maintained reduce blocks
+   covered seven of them. A blanket rule is the only version that stays true as
+   the file grows. The JS typewriter is guarded separately in app.js. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Ambient decoration has no reduced-motion equivalent — hide it rather than
+     freeze it mid-drift. */
+  .splash-atmosphere__blob,
+  .atmosphere,
+  .kb-block__bloom,
+  .direction-card__image-shimmer,
+  .splash-wheel-hearts {
+    display: none !important;
+  }
+}
+
+/* ---- 3. Wrapping --------------------------------------------------------
+   `overflow-wrap` / `word-break` / `hyphens` appeared zero times across all
+   four stylesheets, and `text-overflow: ellipsis` twice in 7,300 lines. The
+   prototype only looks stable because every string is a fixture; one pasted URL
+   or a long brand name breaks out of its container. */
+.msg__bubble,
+.msg__text,
+.chip,
+.qreply,
+.kb-block__title,
+.kb-block__fact-value,
+.brand-drawer__name,
+.brand-drawer__audience,
+.pl-tree__master-name,
+.pl-tree__line-name,
+.x-header__name,
+.x-header__bio,
+.direction-card__body,
+.home-activity__subject,
+.home-suggestion__body {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+/* Fixed-height tiles must clamp, not clip mid-word. */
+.kb-block__title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.x-header__bio   { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.chip, .qreply   { max-width: 100%; }
+.url-inline input { min-width: 0; }
+
+/* ---- 4. Target size -----------------------------------------------------
+   Expand the hit area without growing the glyph (WCAG 2.5.8). */
+.kb-block__collapse,
+.composer-pill__attach,
+.composer-pill__send,
+.brand-drawer__minimize,
+.brand-drawer__prompt-submit,
+.conf__edit {
+  position: relative;
+}
+.kb-block__collapse::after,
+.composer-pill__attach::after,
+.composer-pill__send::after,
+.brand-drawer__minimize::after,
+.brand-drawer__prompt-submit::after,
+.conf__edit::after {
+  content: ''; position: absolute; inset: -6px;
+}
+
+/* Static substitute for the narrated-process carousel under reduced motion.
+   Matches the ambient treatment of .proc-line without the movement. */
+.proc-static {
+  margin: var(--space-2) 0 var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.proc-static__line {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+.proc-static__icon {
+  flex: 0 0 auto; width: 18px; height: 18px;
+  color: var(--primary);
+}
+.proc-static__icon svg { width: 18px; height: 18px; }
+
+/* =========================================================================
+   Knowledge rail — stop it sitting on top of the conversation.
+
+   `.kb-panel` is position:absolute at 180px wide and reserves no space, while
+   `.conv__stream` is centred in the full width. They collide below ~1184px:
+   at 1024px the rail covers 76px of the chat, at 897px it lands on the
+   first-post cards, and at 768px and below it covers the column outright. It
+   never stacked and never hid.
+
+   Above the threshold: reserve the gutter so the chat centres in what's left.
+   Below it: the rail stops floating and becomes a strip above the stream, so
+   the knowledge is still visible and nothing is occluded.
+   ========================================================================= */
+@media (min-width: 1200px) {
+  .conv__main { padding-right: 204px; }
+}
+
+@media (max-width: 1199px) {
+  /* .kb-panel is the last child of .conv, so unpinning it would drop the rail
+     below the composer. Order it to the top instead: the knowledge strip reads
+     as a header for the conversation, which is what the pinned rail was doing
+     spatially anyway. */
+  .conv { display: flex; flex-direction: column; }
+  .conv__main { order: 1; min-height: 0; }
+  .kb-panel {
+    order: 0;
+    position: static;
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto var(--space-3);
+    padding-inline: var(--space-4);
+  }
+  .kb-panel__grid {
+    display: flex;
+    /* The base rule is `flex-direction: column` for the vertical rail; the
+       strip needs an explicit row or the tiles stay stacked full-width. */
+    flex-direction: row;
+    gap: var(--space-3);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .kb-panel__grid::-webkit-scrollbar { display: none; }
+  /* Square 180px tiles become compact strips when they sit in a row. */
+  .kb-panel .kb-block {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 168px;
+    aspect-ratio: auto;
+    padding: var(--space-3) var(--space-4);
+  }
+  .kb-panel .kb-block__status { position: static; margin-top: var(--space-2); }
+  /* The expanded overlay is a fixed 50vw panel — unusable at 187px on a phone.
+     Promote it to a bottom sheet. */
+  .kb-panel--has-expanded {
+    position: fixed; inset: auto 0 0 0;
+    width: 100%; max-width: 100%;
+    max-height: 72vh; overflow-y: auto;
+    margin: 0; padding: var(--space-4);
+    background: var(--surface-raised);
+    border-top-left-radius: var(--radius-2xl);
+    border-top-right-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-overlay, 90);
+  }
+}
+
+/* Fixed-width overlays that overflow small screens. */
+.oauth-dialog,
+.pay-dialog { width: min(420px, calc(100vw - 32px)); }
+.brand-drawer {
+  width: min(50vw, 720px);
+  min-width: min(calc(100vw - 32px), 420px);
+}
+
+/* =========================================================================
+   Quick replies — answered state, and a visible commit.
+
+   Was: on commit every pill stayed on screen, disabled, unchosen ones at 42%
+   opacity (2.74:1, below AA) — a block of grey that read as a dead form and
+   gave no way back. Now the row collapses to the answer alone.
+   ========================================================================= */
+.qreplies { position: relative; }
+
+/* The commit countdown. Previously a 1500ms invisible wait: nothing on screen
+   said a choice was about to lock. */
+.qreplies__meter {
+  position: absolute; left: 0; bottom: -6px;
+  height: 2px; width: 0;
+  background: var(--primary);
+  border-radius: 999px;
+  opacity: 0;
+}
+.qreplies__meter--running {
+  animation: qrSettle var(--settle, 1800ms) linear forwards;
+}
+@keyframes qrSettle {
+  from { width: 0;    opacity: 0.5; }
+  to   { width: 100%; opacity: 0;   }
+}
+
+/* Chosen but not yet committed — still fully legible, still changeable. */
+.qreply--chosen {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Committed. A quiet selected chip, not a disabled button. */
+.qreplies--settled { display: flex; align-items: center; gap: var(--space-2); }
+.qreply--answered {
+  background: var(--primary-soft);
+  border-color: transparent;
+  color: var(--primary);
+  opacity: 1;
+  cursor: default;
+}
+/* Retire the blanket dim. Unchosen options are removed on settle, so this only
+   ever applied during the live window — where dimming a still-clickable
+   control to 42% was actively misleading. */
+.qreply--dim { opacity: 1; }
+
+/* =========================================================================
+   Knowledge rail — a newly captured fact announces itself.
+   ========================================================================= */
+.kb-block__fact--new {
+  animation: kbFactIn var(--duration-slow, 360ms) var(--ease-emphasized, ease-out) both;
+}
+@keyframes kbFactIn {
+  from { opacity: 0; transform: translateY(4px); background: var(--primary-soft); }
+  to   { opacity: 1; transform: none;            background: transparent; }
 }

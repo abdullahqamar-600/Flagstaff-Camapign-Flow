@@ -26,7 +26,11 @@ const state = {
     actionCallback: null,      // set during a confirmation moment; cleared on resolve
     brand:     { facts: [], expanded: false },
     trending:  { facts: [], expanded: false },
-    algorithm: { facts: [], expanded: false },
+    // 'algorithm' (Platform Algorithm) removed: nothing ever wrote to it, so it
+    // sat empty for the entire flow while the infrastructure-build step claimed
+    // "X algorithm rules and content guardrails. Loaded." A permanently blank
+    // third of the rail also made the rail read as a progress bar that never
+    // completes. Two knowledge bases, both of which actually fill.
   },
 
   // Identity collected during onboarding (mutable, edits write here)
@@ -345,6 +349,10 @@ function scoutTyping() {
 }
 
 async function scoutMsg(text, { beat = 600, typingFor = 700, charSpeed = 14 } = {}) {
+  // Scout speaking is the boundary for revising an answer: past this point the
+  // choice has been consumed by the flow, so any still-open reply row commits
+  // and loses its "Change" affordance rather than offering an edit we can't honour.
+  lockOpenReplies();
   // Only the current Scout message shows its avatar/name head. Mark previous
   // ones as past so the chat reads as a single live speaker rather than a
   // wall of repeated avatars.
@@ -398,7 +406,21 @@ function highlightKeywords(text) {
   return escape(text).replace(combined, (m) => `<strong class="kw">${m}</strong>`);
 }
 
+// Reduced motion is a JS concern here, not just a CSS one: the typewriter is
+// the single largest source of movement in the flow (~30 turns of text that
+// reflows on every character, which is the specific vestibular trigger) and no
+// media query can reach it. Three other functions in this file already check —
+// the guard was simply never applied to the primary text renderer.
+const REDUCED_MOTION = window.matchMedia
+  ? window.matchMedia('(prefers-reduced-motion: reduce)')
+  : { matches: false };
+
 async function typewriterInto(node, text, baseSpeed = 14) {
+  if (REDUCED_MOTION.matches) {
+    node.appendChild(document.createTextNode(text));
+    scrollDown();
+    return;
+  }
   // Reveal characters one at a time with natural rhythm at punctuation.
   // Auto-scrolls when newlines arrive so the user follows along.
   for (let i = 0; i < text.length; i++) {
@@ -428,46 +450,108 @@ function userMsg(text) {
    Each returns a Promise resolving to the user's choice.
    ========================================================================= */
 
-// Quick replies: pills register as a user-prompt bubble. All pills remain
-// visible; the chosen one is highlighted, the rest dim but stay clickable so
-// the user can change their mind. The choice commits after a short idle.
-function quickReplies(options, { primaryIndex = -1, settleMs = 1500 } = {}) {
+// Quick replies.
+//
+// The old model committed on a hidden 1500ms idle timer and then left every
+// pill on screen, disabled, with the unchosen ones at 42% opacity. Three
+// problems: the wait was invisible (nothing told you a commit was pending), the
+// answered state was a wall of grey that fought the rest of the UI, and once it
+// settled the answer looked permanent with no way back.
+//
+// Now: choosing is instant and reversible while the question is still open —
+// pick again as many times as you like, the bubble follows you. A visible
+// hairline shows the commit approaching. Once it commits the row collapses to
+// just the answer, as a quiet selected chip with a "Change" affordance, so the
+// transcript reads as a conversation rather than a disabled form.
+function quickReplies(options, { primaryIndex = -1, settleMs = 1800 } = {}) {
   return new Promise((resolve) => {
     const wrap = el('div', { class: 'qreplies' });
+    const meter = el('span', { class: 'qreplies__meter', 'aria-hidden': 'true' });
     let activeBtn = null;
+    let activeOpt = null;
     let bubble = null;
     let commitTimer = null;
+    let settled = false;
 
-    const updateChoice = (btn, opt) => {
+    const buttons = options.map((opt, i) => el('button', {
+      class: 'qreply' + (i === primaryIndex ? ' qreply--primary' : ''),
+      type: 'button',
+      'aria-pressed': 'false',
+      onclick: () => updateChoice(i, opt),
+    }, opt));
+
+    // Collapse to the answer. Unchosen options are removed rather than dimmed —
+    // once the question is answered they are noise, and removing them is what
+    // kills the grey block.
+    //
+    // No "Change" affordance here, deliberately. Commit resolves the promise and
+    // the flow moves on within the same tick, so a Change button would be live
+    // for a fraction of a second and, worse, could not actually rewind anything
+    // downstream. That is the same trap as the drawer's "Not quite": an edit
+    // control that simulates being heard. The revision window is *before*
+    // commit — now unlimited, fully legible, and visibly counted down by the
+    // meter. Genuine post-hoc editing needs the flow to support re-running a
+    // step, which is the editable-transcript work, not a button.
+    const settle = () => {
+      if (settled) return;
+      settled = true;
+      meter.remove();
+      wrap.classList.add('qreplies--settled');
+      buttons.forEach((b) => { if (b !== activeBtn) b.remove(); });
+      // Drop the "recommended" solid fill so the answered chip reads as a quiet
+      // record of the choice rather than a live primary button.
+      activeBtn.classList.remove('qreply--primary', 'qreply--chosen');
+      activeBtn.classList.add('qreply--answered');
+      activeBtn.disabled = true;
+      resolve(activeOpt);
+    };
+
+    function updateChoice(i, opt) {
+      const btn = buttons[i];
       if (activeBtn === btn) return;
       activeBtn = btn;
-      Array.from(wrap.children).forEach((c) => {
-        c.classList.toggle('qreply--chosen', c === btn);
-        c.classList.toggle('qreply--dim', c !== btn);
+      activeOpt = opt;
+      buttons.forEach((c) => {
+        const on = c === btn;
+        c.classList.toggle('qreply--chosen', on);
+        c.setAttribute('aria-pressed', String(on));
       });
-      if (!bubble) {
-        bubble = userMsg(opt);
-      } else {
+      if (!bubble) bubble = userMsg(opt);
+      else {
         const t = bubble.querySelector('.msg__bubble');
         if (t) t.textContent = opt;
       }
+      // Restart the visible countdown.
+      meter.classList.remove('qreplies__meter--running');
+      void meter.offsetWidth;
+      meter.style.setProperty('--settle', settleMs + 'ms');
+      meter.classList.add('qreplies__meter--running');
       if (commitTimer) clearTimeout(commitTimer);
-      commitTimer = setTimeout(() => {
-        wrap.classList.add('qreplies--chosen');
-        Array.from(wrap.children).forEach((c) => { c.disabled = true; });
-        resolve(opt);
-      }, settleMs);
+      commitTimer = setTimeout(settle, settleMs);
+    }
+
+    // Safety net: if Scout somehow starts speaking while a choice is still
+    // pending, commit it now rather than leaving a live countdown behind an
+    // advancing conversation.
+    const finalize = () => {
+      if (commitTimer) clearTimeout(commitTimer);
+      if (activeBtn && !settled) settle();
+      openReplyRows.delete(finalize);
     };
 
-    options.forEach((opt, i) => {
-      const btn = el('button', {
-        class: 'qreply' + (i === primaryIndex ? ' qreply--primary' : ''),
-        onclick: () => updateChoice(btn, opt),
-      }, opt);
-      wrap.appendChild(btn);
-    });
+    buttons.forEach(b => wrap.appendChild(b));
+    wrap.appendChild(meter);
     append(wrap);
+    openReplyRows.add(finalize);
   });
+}
+
+// Rows that still accept a change. scoutMsg() closes them — the conversation
+// moving on is the natural boundary for "you can still revise this".
+const openReplyRows = new Set();
+function lockOpenReplies() {
+  [...openReplyRows].forEach(fn => { try { fn(); } catch (e) {} });
+  openReplyRows.clear();
 }
 
 function selectionChips(options, {
@@ -772,6 +856,24 @@ function heroBlock(acct, _iconId, label, desc) {
 // icon). The text is rendered in a soft indigo shade so it reads as ambient
 // status rather than chat content.
 async function narratedProcess(_label, lines, { lineBeat = 1400, exitBeat = 360, _finalBeat = 0 } = {}) {
+  // Reduced motion: the carousel replaces one line with the next, so freezing
+  // the animation would leave only the last observation. Render the whole set
+  // as a static list instead — same information, no movement, and it stays
+  // readable rather than timing out.
+  if (REDUCED_MOTION.matches) {
+    const normalizeStatic = (l) => (typeof l === 'string' ? { icon: 'i-sparkle', text: l } : l);
+    append(el('ul', { class: 'proc-static' },
+      lines.map(l => {
+        const line = normalizeStatic(l);
+        return el('li', { class: 'proc-static__line' }, [
+          el('span', { class: 'proc-static__icon', 'aria-hidden': 'true', html: icon(line.icon || 'i-sparkle') }),
+          el('span', { class: 'proc-static__text' }, line.text),
+        ]);
+      })
+    ));
+    scrollDown();
+    return;
+  }
   // The icon plate stays anchored in place — only its inner SVG cross-fades
   // and rotates softly between activities. The text uses its existing
   // up/in & up/out pattern so each phrase reads as a fresh thought.
@@ -985,54 +1087,68 @@ function productLineTreeCard(lines) {
 /* =========================================================================
    8. CONNECT X CARD
    ========================================================================= */
+// Multi-platform connect card. X is active; IG / FB / TikTok are surfaced
+// with "Coming soon" pills so the user understands the product is
+// cross-platform with X as the first available surface.
+//
+// Returns { card, next } rather than a bare promise: the user can cancel the
+// OAuth dialog, and when they do the card is still on screen, so the caller
+// needs to wait on the SAME card again instead of appending a duplicate.
+// `next()` resolves on the card's next decision.
 function connectSocial() {
-  // Multi-platform connect card. X is active; IG / FB / TikTok are surfaced
-  // with "Coming soon" pills so the user understands the product is
-  // cross-platform with X as the first available surface.
-  return new Promise((resolve) => {
-    const platforms = [
-      { id: 'x',         icon: 'i-x-logo',    name: 'X',          status: 'active' },
-      { id: 'instagram', icon: 'i-instagram', name: 'Instagram',  status: 'soon' },
-      { id: 'facebook',  icon: 'i-facebook',  name: 'Facebook',   status: 'soon' },
-      { id: 'tiktok',    icon: 'i-tiktok',    name: 'TikTok',     status: 'soon' },
-    ];
+  const holder = { resolve: null };
+  const decide = (value) => {
+    const r = holder.resolve;
+    holder.resolve = null;
+    if (r) r(value);
+  };
 
-    const rows = platforms.map(p => {
-      const isActive = p.status === 'active';
-      const row = el('button', {
-        class: 'platform platform--' + p.id + (isActive ? '' : ' platform--soon'),
-        disabled: isActive ? null : 'true',
-        // Keep the widget visible while the OAuth modal is open. The caller
-        // (step5_x_connect) is responsible for marking the card as connected
-        // after authorization completes.
-        onclick: isActive
-          ? () => resolve({ result: 'connect', card })
-          : null,
-      }, [
-        el('span', { class: 'platform__icon', html: icon(p.icon) }),
-        el('span', { class: 'platform__name' }, p.name),
-        isActive
-          ? el('span', { class: 'platform__cta' }, 'Connect')
-          : el('span', { class: 'platform__pill' }, 'Coming soon'),
-      ]);
-      return row;
-    });
+  const platforms = [
+    { id: 'x',         icon: 'i-x-logo',    name: 'X',          status: 'active' },
+    { id: 'instagram', icon: 'i-instagram', name: 'Instagram',  status: 'soon' },
+    { id: 'facebook',  icon: 'i-facebook',  name: 'Facebook',   status: 'soon' },
+    { id: 'tiktok',    icon: 'i-tiktok',    name: 'TikTok',     status: 'soon' },
+  ];
 
-    const card = el('div', { class: 'connect connect--multi' }, [
-      el('div', { class: 'connect__head' }, [
-        el('div', { class: 'connect__title' }, 'Connect a social account'),
-        el('div', { class: 'connect__sub' }, "Read-only. Scout never posts without your approval."),
-      ]),
-      el('div', { class: 'platform-list' }, rows),
-      el('div', { class: 'connect__actions' }, [
-        el('button', {
-          class: 'btn-ghost',
-          onclick: () => { card.remove(); userMsg('Skip for now'); resolve({ result: 'skip', card: null }); },
-        }, 'Skip for now'),
-      ]),
+  const rows = platforms.map(p => {
+    const isActive = p.status === 'active';
+    return el('button', {
+      class: 'platform platform--' + p.id + (isActive ? '' : ' platform--soon'),
+      type: 'button',
+      disabled: isActive ? null : 'true',
+      // "Coming soon" rows are inert to pointers as well as disabled, so the
+      // whole row reads as unavailable rather than as a target that ignores you.
+      'aria-disabled': isActive ? null : 'true',
+      // Keep the widget visible while the OAuth modal is open. The caller
+      // (step5_x_connect) marks the card connected after authorization, or
+      // resets it to idle if the user cancels.
+      onclick: isActive ? () => decide({ result: 'connect', card }) : null,
+    }, [
+      el('span', { class: 'platform__icon', html: icon(p.icon) }),
+      el('span', { class: 'platform__name' }, p.name),
+      isActive
+        ? el('span', { class: 'platform__cta' }, 'Connect')
+        : el('span', { class: 'platform__pill' }, 'Coming soon'),
     ]);
-    append(card);
   });
+
+  const card = el('div', { class: 'connect connect--multi' }, [
+    el('div', { class: 'connect__head' }, [
+      el('div', { class: 'connect__title' }, 'Connect a social account'),
+      el('div', { class: 'connect__sub' }, "Read-only. Scout never posts without your approval."),
+    ]),
+    el('div', { class: 'platform-list' }, rows),
+    el('div', { class: 'connect__actions' }, [
+      el('button', {
+        class: 'btn-ghost',
+        type: 'button',
+        onclick: () => { card.remove(); userMsg('Skip for now'); decide({ result: 'skip', card: null }); },
+      }, 'Skip for now'),
+    ]),
+  ]);
+  append(card);
+
+  return { card, next: () => new Promise((resolve) => { holder.resolve = resolve; }) };
 }
 
 /* =========================================================================
@@ -1261,7 +1377,6 @@ function trendCard(iconId, title, desc) {
 const KB_META = [
   { id: 'brand',     label: 'Brand',              empty: 'Identity, products, niche, voice' },
   { id: 'trending',  label: 'Trending',           empty: 'Trends, competitors, audience patterns' },
-  { id: 'algorithm', label: 'Platform Algorithm', empty: 'X algorithm and content rules' },
 ];
 
 // Brand block label depends on account type — "Brand" for brands,
@@ -1279,7 +1394,7 @@ function renderKB() {
   if (!panel) return;
   panel.innerHTML = '';
 
-  const anyExpanded = ['brand', 'trending', 'algorithm'].some(k => state.kb[k].expanded);
+  const anyExpanded = ['brand', 'trending'].some(k => state.kb[k].expanded);
   panel.classList.toggle('kb-panel--has-expanded', anyExpanded);
 
   // Backdrop overlay, mounted on body so it dims the entire app surface
@@ -1293,7 +1408,7 @@ function renderKB() {
     }
     overlay.onclick = () => {
       if (state.kb.actionCallback) return;
-      ['brand', 'trending', 'algorithm'].forEach(k => state.kb[k].expanded = false);
+      ['brand', 'trending'].forEach(k => state.kb[k].expanded = false);
       renderKB();
     };
   } else if (overlay) {
@@ -1329,7 +1444,11 @@ function renderKB() {
 
     const factEls = isExpanded
       ? (filled
-          ? kb.facts.map(f => el('div', { class: 'kb-block__fact' }, [
+          ? kb.facts.map(f => el('div', {
+              class: 'kb-block__fact' + (
+                state.kb.lastWrite && state.kb.lastWrite.kbId === meta.id && state.kb.lastWrite.label === f.label
+                  ? ' kb-block__fact--new' : ''),
+            }, [
               el('span', { class: 'kb-block__fact-label' }, f.label),
               el('span', { class: 'kb-block__fact-value' }, f.value),
             ]))
@@ -1403,20 +1522,36 @@ function renderKB() {
       );
     }
 
-    const block = el('div', {
-      class: 'kb-block' + stateClass,
-      'data-kb': meta.id,
-      onclick: isExpanded
-        // Click on an expanded block (away from buttons) collapses it,
-        // unless we're in a confirmation moment for that block.
-        ? (state.kb.actionCallback ? null : () => { kb.expanded = false; renderKB(); })
-        // Click on a compact block expands it (collapses any other expanded block).
-        : () => {
-            ['brand', 'trending', 'algorithm'].forEach(k => state.kb[k].expanded = false);
+    // As a <div> with onclick, the three knowledge panels — the product's
+    // headline promise — were permanently un-openable without a mouse, and
+    // their contents never reached the accessibility tree.
+    //
+    // A collapsed tile has no interactive children, so the whole 180×180 square
+    // can legally be the <button> and keeps its full-tile hit target. An
+    // expanded tile contains the collapse control (and sometimes an Edit /
+    // Looks right footer), and nesting buttons is invalid, so it renders as a
+    // plain container and is dismissed via that control, the overlay, or Escape.
+    const block = isExpanded
+      ? el('div', {
+          class: 'kb-block' + stateClass,
+          'data-kb': meta.id,
+          role: 'group',
+          'aria-label': kbBlockLabel(meta.id),
+        }, blockChildren)
+      : el('button', {
+          class: 'kb-block' + stateClass,
+          type: 'button',
+          'data-kb': meta.id,
+          'aria-expanded': 'false',
+          'aria-label': kbBlockLabel(meta.id) + (filled
+            ? ` — ${kb.facts.length} ${kb.facts.length === 1 ? 'fact' : 'facts'} captured`
+            : ' — nothing captured yet'),
+          onclick: () => {
+            ['brand', 'trending'].forEach(k => state.kb[k].expanded = false);
             kb.expanded = true;
             renderKB();
           },
-    }, blockChildren);
+        }, blockChildren);
 
     grid.appendChild(block);
   });
@@ -1432,7 +1567,21 @@ function addKBFact(kbId, label, value) {
   const existing = kb.facts.findIndex(f => f.label === label);
   if (existing >= 0) kb.facts[existing] = { label, value };
   else kb.facts.push({ label, value });
+  state.kb.lastWrite = { kbId, label };
   renderKB();
+}
+
+// Writes a set of facts one at a time instead of dumping them in a single
+// render. The rail used to jump from empty to fully populated the instant a
+// narration finished, which made it read as decoration running on its own
+// clock rather than as Scout recording what it just said. Staggering ties the
+// two together: you watch the knowledge accumulate.
+async function addKBFacts(kbId, pairs, { stagger = 260 } = {}) {
+  for (const [label, value] of pairs) {
+    if (value == null || value === '') continue;
+    addKBFact(kbId, label, value);
+    await sleep(stagger);
+  }
 }
 
 
@@ -1649,23 +1798,25 @@ async function step3_product_lines_brand_only() {
     { primaryIndex: 0 }
   );
 
-  if (answer.startsWith('Not sure')) {
+  // Resolve the three answers down to one of two modes BEFORE branching.
+  // Testing `answer` again after the clarifier used to send "Not sure" into
+  // `answer.startsWith('No')` — which is true — so a user who said they had
+  // different customer types was told "one master voice", the opposite of
+  // what they'd just chosen.
+  let mode = answer === 'No, one brand voice' ? 'single' : 'multiple';
+
+  if (answer === 'Not sure') {
     await scoutMsg(
       "Quick clarifier, do you sell more than one type of product, or do all your products target the same kind of customer?",
       { typingFor: 900, beat: 400 }
     );
     const sub = await quickReplies(['Different customer types', 'Same customer'], { primaryIndex: 0 });
-    if (sub.startsWith('Same')) {
-      state.skipped.add('product-lines');
-      await scoutMsg("Got it, one master voice. Cleaner that way.", { typingFor: 600 });
-      return;
-    }
-    // else fall through to "Yes" handling
+    mode = sub === 'Same customer' ? 'single' : 'multiple';
   }
 
-  if (answer.startsWith('No')) {
+  if (mode === 'single') {
     state.skipped.add('product-lines');
-    await scoutMsg("Got it, one master voice. I'll keep it cohesive.", { typingFor: 600, beat: 400 });
+    await scoutMsg("One master voice it is. I'll keep it cohesive.", { typingFor: 600, beat: 400 });
     return;
   }
 
@@ -1770,35 +1921,50 @@ async function step5_x_connect() {
     "First step, connect the account where you publish. I'll read what's working and build from there.",
     { typingFor: 1100, beat: 500 }
   );
-  const { result, card } = await connectSocial();
+  const { card, next } = connectSocial();
 
-  if (result === 'skip') {
-    state.skipped.add('x-connect');
+  // Loop, because declining the OAuth grant is a real answer. Cancelling used
+  // to leave the flow deadlocked with the dialog's own Cancel button unwired;
+  // now it returns the user to the still-visible card with both options live.
+  for (;;) {
+    const { result } = await next();
+
+    if (result === 'skip') {
+      state.skipped.add('x-connect');
+      await scoutMsg(
+        "No problem. Without account data the best way to get me up to speed is for you to share what you've got. Paste a website link below, or just describe your brand in your own words.",
+        { typingFor: 1300, beat: 500 }
+      );
+      return 'skipped-entirely';
+    }
+
+    // OAuth simulation. The connect card stays visible behind the modal so the
+    // user keeps context. The X row reads "Connecting…" while the modal is
+    // open, then flips to "Connected" — or back to idle if they decline.
+    markConnectXState(card, 'connecting');
+    const auth = await fakeOAuthModal();
+
+    if (auth === 'cancelled') {
+      markConnectXState(card, 'idle');
+      await scoutMsg(
+        "That's yours to decide. Connect when you're ready, or skip it and tell me about your brand instead — I can work from either.",
+        { typingFor: 900, beat: 400 }
+      );
+      continue;
+    }
+
+    markConnectXState(card, 'connected');
+    userMsg('Authorized X');
+
     await scoutMsg(
-      "No problem. Without account data the best way to get me up to speed is for you to share what you've got. The chat below takes website links, brand docs, or just a description in your own words.",
-      { typingFor: 1300, beat: 500 }
+      "Connected. Let me read what's there.",
+      { typingFor: 700, beat: 400 }
     );
-    return 'skipped-entirely';
-  }
-
-  // OAuth simulation. The connect card stays visible behind the modal so the
-  // user keeps context. The X row marks as "Connecting…" while modal is open,
-  // then flips to "Connected" after authorization.
-  if (card) markConnectXState(card, 'connecting');
-  await fakeOAuthModal();
-  if (card) markConnectXState(card, 'connected');
-  userMsg('Authorized X');
-
-  await scoutMsg(
-    "Connected. Thanks. Let me read what's there.",
-    { typingFor: 700, beat: 400 }
-  );
-  // After Scout's ack, retire the widget gracefully.
-  if (card) {
+    // After Scout's ack, retire the widget gracefully.
     card.classList.add('connect--retiring');
     setTimeout(() => card.remove(), 400);
+    return 'connected-scan';
   }
-  return 'connected-scan';
 }
 
 // Reflect connection progress on the visible X platform row inside the
@@ -1815,13 +1981,32 @@ function markConnectXState(card, stateName) {
     xRow.classList.remove('platform--connecting');
     xRow.classList.add('platform--connected');
     cta.textContent = 'Connected';
+  } else if (stateName === 'idle') {
+    // The user declined the grant. Put the row back the way they found it.
+    xRow.classList.remove('platform--connecting', 'platform--connected');
+    cta.textContent = 'Connect';
   }
 }
 
+// Simulated X consent dialog. Resolves 'authorized' or 'cancelled' — declining
+// is a first-class answer, not a dead end. Real dialog semantics throughout:
+// role/aria-modal/labelled title, focus moved in and restored on close, a focus
+// trap, Escape, and backdrop-click to dismiss.
 function fakeOAuthModal() {
   return new Promise((resolve) => {
-    const dialog = el('div', { class: 'oauth-dialog' }, [
-      el('div', { class: 'oauth-dialog__head' }, [
+    const opener = document.activeElement;
+    const titleId = 'oauth-title';
+
+    const cancelBtn = el('button', { class: 'btn-ghost oauth-dialog__cancel', type: 'button' }, 'Cancel');
+    const authorizeBtn = el('button', { class: 'btn-x oauth-dialog__authorize', type: 'button' }, 'Authorize app');
+
+    const dialog = el('div', {
+      class: 'oauth-dialog',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': titleId,
+    }, [
+      el('div', { class: 'oauth-dialog__head', id: titleId }, [
         el('span', { class: 'oauth-dialog__x', html: icon('i-x-logo') }),
         document.createTextNode('Authorize Flagstaff Social'),
       ]),
@@ -1837,19 +2022,44 @@ function fakeOAuthModal() {
         ]),
         el('div', { class: 'oauth-dialog__note' }, 'Read-only. Flagstaff cannot post without your approval.'),
       ]),
-      el('div', { class: 'oauth-dialog__actions' }, [
-        el('button', { class: 'btn-ghost' }, 'Cancel'),
-        el('button', { class: 'btn-x oauth-dialog__authorize' }, 'Authorize app'),
-      ]),
+      el('div', { class: 'oauth-dialog__actions' }, [cancelBtn, authorizeBtn]),
     ]);
+
     const backdrop = el('div', { class: 'oauth-backdrop' }, [dialog]);
-    document.body.appendChild(backdrop);
-    dialog.querySelector('.oauth-dialog__authorize').addEventListener('click', async () => {
+
+    let settled = false;
+    const close = async (outcome) => {
+      if (settled) return;
+      settled = true;
+      document.removeEventListener('keydown', onKeydown, true);
       backdrop.classList.add('oauth-backdrop--exiting');
       await sleep(220);
       backdrop.remove();
-      resolve();
-    });
+      // Put focus back where the user left it so the flow doesn't dump them at
+      // the top of the document.
+      if (opener && document.contains(opener)) opener.focus({ preventScroll: true });
+      resolve(outcome);
+    };
+
+    function onKeydown(e) {
+      if (e.key === 'Escape') { e.preventDefault(); close('cancelled'); return; }
+      if (e.key !== 'Tab') return;
+      // Trap: cycle between the two actions rather than tabbing into the app
+      // behind an open modal.
+      const focusables = [cancelBtn, authorizeBtn];
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+
+    cancelBtn.addEventListener('click', () => close('cancelled'));
+    authorizeBtn.addEventListener('click', () => close('authorized'));
+    backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close('cancelled'); });
+    document.addEventListener('keydown', onKeydown, true);
+
+    document.body.appendChild(backdrop);
+    requestAnimationFrame(() => authorizeBtn.focus({ preventScroll: true }));
   });
 }
 
@@ -1891,12 +2101,18 @@ async function step6_profile_scan() {
     xProfilePreview(buildProfileSummary());
   }
   // Seed Main KB with what we just learned from the scan
-  addKBFact('brand', 'Handle',     state.brand.handle);
-  addKBFact('brand', 'Followers',  state.brand.followers);
-  if (!isNew) {
-    addKBFact('brand', 'Best format', state.accountType === 'brand' ? 'Image threads' : 'Threads with screenshots');
-    addKBFact('brand', 'Peak activity', state.accountType === 'brand' ? '2 to 4pm PKT' : '9 to 11am PKT');
-  }
+  // Facts from the account scan. Written as a stagger so the rail fills while
+  // the user is still reading the profile card, not in one jump afterwards.
+  await addKBFacts('brand', [
+    ['Handle',        state.brand.handle],
+    ['Followers',     state.brand.followers],
+    !isNew && ['Best format',   state.accountType === 'brand' ? 'Image threads' : 'Threads with screenshots'],
+    // Peak activity lives here, not in Trending. It is derived from this
+    // account's own engagement, and Trending used to carry a near-identical
+    // "Peak window" fact — the same information split across two tiles under
+    // two names.
+    !isNew && ['Peak activity', state.accountType === 'brand' ? 'Weekdays 2 to 4pm PKT' : '9 to 11am PKT'],
+  ].filter(Boolean));
   scrollDown();
   await sleep(1200);
 }
@@ -1940,9 +2156,9 @@ async function step_brand_review_first() {
   openBrandDrawer();
   await refreshBrandDrawer();
 
-  addKBFact('brand', 'Niche', state.brand.niche);
-  addKBFact('brand', 'Themes', state.brand.themes.join(', '));
-  if (isBrand) addKBFact('brand', 'Products', state.brand.products.join(', '));
+  // (Niche / Themes / Products were re-written here, duplicating the site-scan
+  // writes above. Upsert-by-label made them invisible no-ops that still forced
+  // a re-render and stole the "active" tile back to Brand mid-review.)
 
   revealBrandDrawerAccept();
   await new Promise((resolve) => { drawerState.acceptResolver = resolve; });
@@ -2361,6 +2577,10 @@ async function step_audience_infer() {
     await scoutMsg("Good. That's the lens I'll write into.", { typingFor: 700, beat: 300 });
   }
   addKBFact('brand', 'Audience', state.audience);
+  // The evidence behind the audience call is a market observation, so it lands
+  // in Trending. Gives that tile a second fill moment, at the point where Scout
+  // is explicitly reasoning from the niche scan.
+  addKBFact('trending', 'Audience insight', insight);
   refreshBrandDrawer();
 }
 
@@ -2504,12 +2724,15 @@ async function stepMaterials() {
   await quickReplies(["That's everything", 'Add more later'], { primaryIndex: 0 });
 
   // Populate Main KB from the scan
-  addKBFact('brand', 'Brand',       state.brand.name);
-  addKBFact('brand', 'Positioning', state.brand.positioning);
-  addKBFact('brand', 'Themes',      state.brand.themes.join(', '));
-  if (state.accountType === 'brand') {
-    addKBFact('brand', 'Products',  state.brand.products.join(', '));
-  }
+  // Identity, from the site scan. 'Name' rather than 'Brand' — a fact labelled
+  // "Brand" inside the Brand tile reads as a category, not a value.
+  await addKBFacts('brand', [
+    ['Name',        state.brand.name],
+    ['Niche',       state.brand.niche],
+    ['Positioning', state.brand.positioning],
+    ['Themes',      state.brand.themes.join(', ')],
+    state.accountType === 'brand' && ['Products', state.brand.products.join(', ')],
+  ].filter(Boolean));
 }
 
 async function step7_intel_scan() {
@@ -2536,15 +2759,21 @@ async function step7_intel_scan() {
   trendsPreview();
 
   // Populate Trend KB
-  if (state.accountType === 'brand') {
-    addKBFact('trending', 'Top trend',     '#SouthAsianHeritageWeek (4.2× w/w)');
-    addKBFact('trending', 'Competitors',   '@generation.pk · @khaadiofficial · @sapphirepakistan');
-    addKBFact('trending', 'Peak window',   'Weekdays 1 to 4pm PKT');
-  } else {
-    addKBFact('trending', 'Top trend',     'AI design tooling debate');
-    addKBFact('trending', 'Competitors',   '@brian_lovin · @mds · @rauchg');
-    addKBFact('trending', 'Peak window',   'Weekday mornings PKT');
-  }
+  // This is where Trending starts filling — the first moment Scout has looked
+  // outward rather than at the user. It gets two more writes later (the
+  // audience insight, then the angle they pick), so the tile stays live rather
+  // than filling once and going quiet.
+  await addKBFacts('trending', state.accountType === 'brand'
+    ? [
+        ['Top trend',   '#SouthAsianHeritageWeek (4.2× w/w)'],
+        ['Competitors', '@generation.pk · @khaadiofficial · @sapphirepakistan'],
+        ['Rising format', 'Heritage explainers + modern visuals'],
+      ]
+    : [
+        ['Top trend',   'AI design tooling debate'],
+        ['Competitors', '@brian_lovin · @mds · @rauchg'],
+        ['Rising format', 'Specific examples over abstract principles'],
+      ]);
   await sleep(1400);
 }
 
@@ -2556,12 +2785,12 @@ async function step_post_directions() {
   const iterMap = state.brand.postIterations || {};
   if (!groups.length) return;
 
-  // Visual eyebrow that frames the entire first-post moment.
-  append(el('div', { class: 'first-post-banner' }, [
-    el('span', { class: 'first-post-banner__dot' }),
-    document.createTextNode('Your first post'),
-  ]));
-
+  // There used to be a "YOUR FIRST POST" eyebrow pill here. It restated the
+  // very next line of copy ("I've drafted three directions for your first
+  // post"), it stretched to the full column width because it was an unaligned
+  // flex item — so it read as a floating bar rather than a label attached to
+  // anything — and its pulsing dot was ambient decoration on a static moment.
+  // Scout's own sentence frames the moment; the banner only repeated it.
   await scoutMsg(
     "I've drafted three directions for your first post. Each rides a different angle and bundles a tone, a format, and a visual. Pick the one that sounds like you.",
     { typingFor: 1300, beat: 400 }
@@ -2584,7 +2813,11 @@ async function step_post_directions() {
   });
 
   return new Promise((resolve) => {
-    const list = el('div', { class: 'directions-list' });
+    const list = el('div', {
+      class: 'directions-list',
+      role: 'radiogroup',
+      'aria-label': 'Choose a direction for your first post',
+    });
     let activeCard = null;
     let bubble = null;
     let commitTimer = null;
@@ -2606,14 +2839,22 @@ async function step_post_directions() {
     const avatarSrc   = isBrand ? '/ProfileBrand.jpeg' : '/Profile.png';
 
     directions.forEach((d, i) => {
-      const card = el('div', {
+      // A real <button>, matching the tone cards one step earlier. As a <div>
+      // with onclick this — the highest-stakes choice in the flow — was
+      // unreachable by keyboard, and a keyboard user got silently rerouted
+      // into "save for later".
+      const card = el('button', {
         class: 'direction-card',
+        type: 'button',
+        role: 'radio',
+        'aria-checked': 'false',
         onclick: () => {
           if (activeCard === card) return;
           activeCard = card;
           Array.from(list.children).forEach((c) => {
             c.classList.toggle('direction-card--active', c === card);
             c.classList.toggle('direction-card--dim', c !== card);
+            c.setAttribute('aria-checked', String(c === card));
           });
           const label = `Picked: ${d.group.theme}`;
           if (!bubble) bubble = userMsg(label);
@@ -2736,53 +2977,75 @@ async function step_edit_publish() {
   );
 
   await new Promise((resolve) => {
-    const ta = el('textarea', { class: 'post-editor__textarea', rows: '6' }, state.draftPost);
-    const counter = el('span', { class: 'post-editor__counter' }, String(state.draftPost.length) + ' / 280');
+    const editorId = 'post-editor-field';
+    const ta = el('textarea', {
+      class: 'post-editor__textarea',
+      rows: '6',
+      id: editorId,
+      'aria-describedby': 'post-editor-count',
+    }, state.draftPost);
+    // The counter is the only signal for the 280 limit, so it has to be
+    // announced and it has to say something in words — a colour change alone
+    // fails the design language's own accent-removal test.
+    const counter = el('span', {
+      class: 'post-editor__counter',
+      id: 'post-editor-count',
+      role: 'status',
+      'aria-live': 'polite',
+    });
+    const publishBtn = el('button', { class: 'btn-primary post-editor__publish', type: 'button' }, [
+      document.createTextNode('Publish'),
+      el('span', { html: icon('i-arrow-right') }),
+    ]);
 
     const updateCounter = () => {
-      const len = ta.value.length;
-      counter.textContent = `${len} / 280`;
-      counter.classList.toggle('post-editor__counter--warn', len > 260);
+      const len = ta.value.trim().length;
+      const over = len - 280;
+      counter.textContent = over > 0 ? `${over} over` : `${len} / 280`;
+      counter.classList.toggle('post-editor__counter--warn', len > 260 && len <= 280);
       counter.classList.toggle('post-editor__counter--over', len > 280);
+      // Publish used to ship an over-limit post and silently no-op on an empty
+      // one, which halted the whole conversation with no explanation.
+      publishBtn.disabled = len === 0 || len > 280;
+      publishBtn.title = len === 0
+        ? 'Write something first'
+        : (len > 280 ? `${over} characters over the limit` : '');
     };
 
     const editor = el('div', { class: 'post-editor' }, [
-      el('div', { class: 'post-editor__head' }, [
+      el('label', { class: 'post-editor__head', for: editorId }, [
         el('span', { class: 'post-editor__head-icon', html: icon('i-pencil') }),
         document.createTextNode('Your first post'),
       ]),
       ta,
       el('div', { class: 'post-editor__foot' }, [
         counter,
-        el('div', { class: 'post-editor__actions' }, [
-          el('button', {
-            class: 'btn-primary post-editor__publish',
-            onclick: async () => {
-              const body = ta.value.trim();
-              if (!body) return;
-              state.draftPost = body;
-              state.publishedPost = { body, postedAt: Date.now() };
-              editor.remove();
-              userMsg('Publish');
-              await narratedProcess('Publishing to X', [
-                { icon: 'i-sparkle', text: 'Queueing to X publish endpoint.' },
-                { icon: 'i-clock',   text: "Posting at the next peak window for your audience." },
-                { icon: 'i-check',   text: 'Posted. Tracking will update on the dashboard.' },
-              ], { lineBeat: 800 });
-              renderPublishedPost(body);
-              addKBFact('brand', 'First post', body.length > 80 ? body.slice(0, 77) + '…' : body);
-              resolve();
-            },
-          }, [
-            el('span', { class: 'post-editor__publish-label' }, 'Publish'),
-            el('span', { html: icon('i-arrow-right') }),
-          ]),
-        ]),
+        el('div', { class: 'post-editor__actions' }, [publishBtn]),
       ]),
     ]);
 
+    publishBtn.addEventListener('click', async () => {
+      const body = ta.value.trim();
+      if (!body || body.length > 280) { ta.focus(); return; }
+      state.draftPost = body;
+      state.publishedPost = { body, postedAt: Date.now() };
+      editor.remove();
+      userMsg('Publish');
+      await narratedProcess('Publishing to X', [
+        { icon: 'i-sparkle', text: 'Queueing to X publish endpoint.' },
+        { icon: 'i-clock',   text: "Posting at the next peak window for your audience." },
+        { icon: 'i-check',   text: 'Posted. Tracking will update on the dashboard.' },
+      ], { lineBeat: 800 });
+      renderPublishedPost(body);
+      addKBFact('brand', 'First post', body.length > 80 ? body.slice(0, 77) + '…' : body);
+      resolve();
+    });
+
     ta.addEventListener('input', updateCounter);
     append(editor);
+    // Run once at mount: a seeded draft already over 260 used to show no
+    // warning until the first keystroke.
+    updateCounter();
     requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); });
   });
 }
@@ -2907,7 +3170,6 @@ async function step_infrastructure_build() {
 
   await narratedProcess('Building your marketing infrastructure', [
     { icon: 'i-check', text: 'Brand knowledge base. Locked.' },
-    { icon: 'i-check', text: "X algorithm rules and content guardrails. Loaded." },
     { icon: 'i-check', text: 'Trend monitoring for your niche. Active.' },
     { icon: 'i-check', text: 'Optimal posting windows for your audience. Calibrated.' },
     { icon: 'i-check', text: 'Content strategy. Configured.' },
@@ -4215,6 +4477,16 @@ function setActiveNav(target) {
 function enterPanelMode() {
   document.body.classList.remove('mode-onboarding');
   document.body.classList.add('mode-campaigns');
+  syncTopbarAccount();
+}
+
+// The topbar handle is hardcoded to the @swiftie.central demo fixture in the
+// markup. Once onboarding has run, the signed-in account is the brand the user
+// just built — showing someone else's handle above their own dashboard was the
+// loudest part of the handoff problem.
+function syncTopbarAccount() {
+  const name = document.querySelector('.topbar-acct__name');
+  if (name && justOnboarded() && state.brand.handle) name.textContent = state.brand.handle;
 }
 
 function goToCampaigns() {
@@ -4240,41 +4512,155 @@ function goToHome() {
    same panel wrapper, same header pattern, same card treatment.
    ========================================================================= */
 
-const HOME_STATS = [
+/* The Home dashboard has two modes.
+   - Returning: an established workspace, the @swiftie.central demo fixture.
+   - First run: the screen onboarding hands off to. It used to render the
+     returning fixture, so a user who had just published their first post was
+     greeted with "Published (30d): 28" and an activity feed about somebody
+     else's Taylor Swift campaigns — the last screen of onboarding proved that
+     nothing they'd just done was recorded. This is the single most damaging
+     moment in the flow, and it is entirely a data problem.
+   `justOnboarded()` is the switch: state.brand is only populated by the
+   conversation, so its presence means we arrived from onboarding. */
+function justOnboarded() {
+  return !!(state.brand && state.brand.name);
+}
+
+const HOME_STATS_RETURNING = [
   { label: 'Active campaigns',   value: '2',    delta: '+1 this week',      tone: 'draft' },
   { label: 'Posts scheduled',    value: '13',   delta: 'Next: Thu · 7 PM',  tone: 'progress' },
   { label: 'Pending review',     value: '4',    delta: 'Oldest: 2 days',    tone: 'review' },
   { label: 'Published (30d)',    value: '28',   delta: '+11 vs. prior 30d', tone: 'published' },
 ];
 
-const HOME_ACTIVITY = [
+// First run is deliberately sparse. A brand-new workspace has almost no
+// numbers, and inventing them is what broke trust here in the first place.
+function homeStatsFirstRun() {
+  const published = state.publishedPost ? '1' : '0';
+  const drafts = state.skipped.has('first-post') ? '3' : '2';
+  return [
+    { label: 'Published',       value: published, delta: state.publishedPost ? 'Just now · tracking' : 'Nothing live yet', tone: 'published' },
+    { label: 'Drafts ready',    value: drafts,    delta: 'From your first session', tone: 'draft' },
+    { label: 'Trends watched',  value: '1',       delta: state.brand?.trendGroups?.[0]?.theme || 'In your niche', tone: 'progress' },
+    { label: 'Knowledge',       value: String(state.kb.brand.facts.length + state.kb.trending.facts.length),
+      delta: 'Facts Scout captured', tone: 'review' },
+  ];
+}
+
+const HOME_ACTIVITY_RETURNING = [
   { who: 'Scout',            what: 'curated a countdown for',        subject: '1989 Anniversary Week',       when: '12 min ago' },
   { who: 'Swiftie Central',  what: 'moved',                          subject: 'Track 5 Theory Sprint to In Progress', when: '2 hr ago' },
   { who: 'Scout',            what: 'replayed a winning format:',     subject: 'Rank the Eras Poll, round 2',  when: 'Yesterday' },
   { who: 'Swiftie Central',  what: 'published',                      subject: 'Cornelia Street clues post',   when: '2 days ago' },
 ];
 
-const HOME_SUGGESTIONS = [
+function homeActivityFirstRun() {
+  const name = state.brand?.displayName || state.brand?.name || 'You';
+  const rows = [];
+  if (state.publishedPost) {
+    rows.push({ who: name, what: 'published', subject: truncate(state.publishedPost.body, 48), when: 'Just now' });
+  }
+  rows.push({ who: 'Scout', what: 'built your knowledge base from', subject: state.brand?.websiteUrl || 'your brand', when: 'Just now' });
+  if (state.tone) {
+    rows.push({ who: 'Scout', what: 'calibrated your voice to', subject: state.tone, when: 'A moment ago' });
+  }
+  if (state.goals?.length) {
+    rows.push({ who: name, what: 'set goals:', subject: state.goals.join(', '), when: 'A moment ago' });
+  }
+  return rows;
+}
+
+const HOME_SUGGESTIONS_RETURNING = [
   { title: 'Build toward Oct 27', body: 'The 1989 anniversary is coming up. Scout has a 5-post countdown ready from your top-reach anniversary pattern.', cta: 'Review draft' },
   { title: 'Replay your reply winner', body: '"Rank the eras poll" pulled 4.1× your usual replies. Scout rebuilt it as a tighter bracket for this week.', cta: 'Open brief' },
   { title: 'Use the Track 5 chatter', body: '"Track 5" mentions are up 3.4× in your fandom lane. Scout drafted a theory carousel while the thread is active.', cta: 'Read draft' },
 ];
 
+// Next moves are derived from what the user actually did and skipped, so the
+// dashboard picks up the thread of the conversation instead of changing subject.
+function homeSuggestionsFirstRun() {
+  const out = [];
+  const trend = state.brand?.trendGroups?.[0];
+
+  if (state.skipped.has('first-post')) {
+    out.push({
+      title: 'Your drafts are waiting',
+      body: `Three directions for your first post, in your ${state.tone || 'chosen'} voice. Pick one and it goes out in your peak window.`,
+      cta: 'Open drafts',
+    });
+  } else if (state.publishedPost) {
+    out.push({
+      title: 'Watch your first post',
+      body: `Live now. Scout is tracking replies, saves and profile visits against ${state.goals?.[0] ? `"${state.goals[0]}"` : 'your goals'} and will flag the first signal worth acting on.`,
+      cta: 'See tracking',
+    });
+  }
+
+  if (state.skipped.has('x-connect')) {
+    out.push({
+      title: 'Connect X to sharpen this',
+      body: "Everything here is built from your brand, not your numbers. Connect X and I'll tell you which of it is actually landing.",
+      cta: 'Connect account',
+    });
+  } else if (state.profileScore != null && state.profileScore < 100) {
+    out.push({
+      title: `Your profile scores ${state.profileScore}%`,
+      body: 'A pinned post and a bio CTA are the two quick wins. Both take about a minute and lift every post that follows.',
+      cta: 'Fix profile',
+    });
+  }
+
+  if (trend) {
+    out.push({
+      title: `${trend.theme} is moving`,
+      body: `${trend.summary || 'Rising in your niche right now.'} Scout can draft into it while the window is open.`,
+      cta: 'Draft a post',
+    });
+  }
+
+  if (state.skipped.has('product-lines') === false && state.productLines?.length) {
+    out.push({
+      title: 'Tune a product line',
+      body: `${state.productLines[0].name} has its own audience and voice. Scout can run it as a separate track whenever you're ready.`,
+      cta: 'Open line',
+    });
+  }
+
+  return out.slice(0, 3);
+}
+
+function truncate(s, n) {
+  const t = String(s || '').trim();
+  return t.length > n ? t.slice(0, n - 1) + '…' : t;
+}
+
 function buildHomeView() {
   const root = $('#home');
   root.innerHTML = '';
 
+  const firstRun = justOnboarded();
+  const stats       = firstRun ? homeStatsFirstRun()       : HOME_STATS_RETURNING;
+  const activityLog = firstRun ? homeActivityFirstRun()    : HOME_ACTIVITY_RETURNING;
+  const suggestions = firstRun ? homeSuggestionsFirstRun() : HOME_SUGGESTIONS_RETURNING;
+  const firstName   = (state.user.name || 'there').split(/\s+/)[0];
+  const handle      = firstRun ? (state.brand?.handle || '@you') : '@swiftie.central';
+
   // Page header — mirrors the campaigns header pattern (same classes).
   const header = el('header', { class: 'campaigns__header' }, [
     el('div', { class: 'campaigns__heading' }, [
-      el('h1', { class: 'campaigns__title' }, 'Home'),
-      el('p',  { class: 'campaigns__subtitle' },
-        'Your workspace at a glance. Scout has been busy — here\'s what\'s moved.'),
+      el('h1', { class: 'campaigns__title' }, firstRun
+        ? (state.publishedPost ? `You're live, ${firstName}.` : `You're set up, ${firstName}.`)
+        : 'Home'),
+      el('p',  { class: 'campaigns__subtitle' }, firstRun
+        ? (state.publishedPost
+            ? "Your first post is out. Everything Scout learned is saved — here's what's next."
+            : "Everything Scout learned is saved. Your drafts are waiting whenever you are.")
+        : 'Your workspace at a glance. Scout has been busy, here\'s what\'s moved.'),
     ]),
     el('div', { class: 'campaigns__actions' }, [
       el('button', { class: 'acct-switch', type: 'button' }, [
         el('span', { class: 'acct-switch__x', html: icon('i-x-logo') }),
-        el('span', { class: 'acct-switch__name' }, '@swiftie.central'),
+        el('span', { class: 'acct-switch__name' }, handle),
         el('span', { class: 'acct-switch__chev', html: icon('i-chevron-down') }),
       ]),
       el('button', {
@@ -4288,8 +4674,8 @@ function buildHomeView() {
   ]);
 
   // Stat strip — 4 compact cards, same visual family as campaign cards.
-  const stats = el('div', { class: 'home-stats' },
-    HOME_STATS.map(s => el('div', { class: 'home-stat' }, [
+  const statsEl = el('div', { class: 'home-stats' },
+    stats.map(s => el('div', { class: 'home-stat' }, [
       el('div', { class: 'home-stat__label' }, s.label),
       el('div', { class: 'home-stat__value' }, s.value),
       el('div', { class: `home-stat__delta home-stat__delta--${s.tone}` }, s.delta),
@@ -4299,11 +4685,11 @@ function buildHomeView() {
   // Two-column: Recent activity | Scout's suggestions
   const activity = el('div', { class: 'home-card' }, [
     el('div', { class: 'home-card__head' }, [
-      el('h2', { class: 'home-card__title' }, 'Recent activity'),
-      el('button', { class: 'home-card__more', type: 'button' }, 'View all'),
-    ]),
+      el('h2', { class: 'home-card__title' }, firstRun ? 'From your first session' : 'Recent activity'),
+      firstRun ? null : el('button', { class: 'home-card__more', type: 'button' }, 'View all'),
+    ].filter(Boolean)),
     el('ul', { class: 'home-activity' },
-      HOME_ACTIVITY.map(a => el('li', { class: 'home-activity__row' }, [
+      activityLog.map(a => el('li', { class: 'home-activity__row' }, [
         a.who === 'Scout'
           ? el('span', { class: 'home-activity__actor home-activity__actor--scout', 'aria-hidden': 'true', html: icon('i-logo') })
           : el('span', { class: 'home-activity__actor home-activity__actor--user' }, a.who.slice(0, 1)),
@@ -4319,7 +4705,7 @@ function buildHomeView() {
     ),
   ]);
 
-  const suggestions = el('div', { class: 'home-card' }, [
+  const suggestionsEl = el('div', { class: 'home-card' }, [
     el('div', { class: 'home-card__head' }, [
       el('h2', { class: 'home-card__title' }, [
         el('span', { class: 'home-card__title-mark', html: icon('i-stars') }),
@@ -4327,7 +4713,7 @@ function buildHomeView() {
       ]),
     ]),
     el('ul', { class: 'home-suggestions' },
-      HOME_SUGGESTIONS.map(s => el('li', { class: 'home-suggestion' }, [
+      suggestions.map(s => el('li', { class: 'home-suggestion' }, [
         el('div', { class: 'home-suggestion__title' }, s.title),
         el('div', { class: 'home-suggestion__body' }, s.body),
         el('button', { class: 'home-suggestion__cta', type: 'button' }, [
@@ -4338,10 +4724,10 @@ function buildHomeView() {
     ),
   ]);
 
-  const twoCol = el('div', { class: 'home-two-col' }, [activity, suggestions]);
+  const twoCol = el('div', { class: 'home-two-col' }, [activity, suggestionsEl]);
 
   root.appendChild(header);
-  root.appendChild(stats);
+  root.appendChild(statsEl);
   root.appendChild(twoCol);
 }
 

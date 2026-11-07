@@ -9,3 +9,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Large local source assets
+portfolio-sources/
+
